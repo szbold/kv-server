@@ -59,7 +59,7 @@ func (s *server) load() {
 	err := s.ds.Load()
 
 	if err != nil {
-		log.Fatal("Error dumping data ", err)
+		log.Fatal("Error loading data ", err)
 		os.Exit(1)
 	}
 }
