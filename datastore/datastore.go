@@ -1,11 +1,7 @@
 package datastore
 
 import (
-	"bufio"
-	"errors"
-	"fmt"
-	"log"
-	"os"
+  "fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,6 +9,20 @@ import (
 
 const _DEFAULT_FILE_PATH = "/tmp/kvdata"
 const _DELIMITER = ";"
+const (
+  _ok = "Ok"
+  _missing_command = "Missing command"
+  _incorrect_command = "Command incorrect"
+)
+
+// think of separating this
+func okResponse(message string) string {
+  return fmt.Sprintf("[OK] %v", message)
+}
+
+func errResponse(message string) string {
+  return fmt.Sprintf("[ERR] %v", message)
+}
 
 type entry struct {
 	value string
@@ -56,77 +66,29 @@ func NewDataStore() DataStore {
 }
 
 func (ds *DataStore) HandleQuery(query string) string {
+  var res string
+  var err string
 	q := strings.Split(strings.Trim(query, "\n"), " ")
+
+  if len(q) < 2 {
+    return errResponse(_incorrect_command + " " + query)
+  }
 
 	switch q[0] {
 	case "get":
-		return ds.get(q[1])
+		res = ds.get(q[1])
+    return okResponse(res)
 	case "set":
 		ds.set(q[1], q[2])
-		return "OK"
+		return okResponse(res)
+  case "incr":
+    err = ds.incr(q[1])
+    if err != "" {
+      return errResponse(err)
+    }
+    return okResponse(res)
 	}
 
-	return "INCORRECT COMMAND"
+	return errResponse(_incorrect_command + " " + query)
 }
 
-func (ds *DataStore) set(key, value string) {
-	ds.mu.Lock()
-	defer ds.mu.Unlock()
-	ds.data[key] = newEntry(value)
-}
-
-func (ds *DataStore) get(key string) string {
-	ds.mu.Lock()
-	defer ds.mu.Unlock()
-
-	if e, exists := ds.data[key]; exists {
-		return e.value
-	}
-
-	return "nil"
-}
-
-func (ds *DataStore) Load() error {
-	file, err := os.OpenFile(_DEFAULT_FILE_PATH, os.O_RDONLY|os.O_CREATE, 0644)
-
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	var line string
-	lineIdx := 1
-	for scanner.Scan() {
-		line = scanner.Text()
-
-		kv := strings.Split(line, _DELIMITER)
-
-		if len(kv) != 2 {
-			return errors.New(fmt.Sprintf("Data posssibly corrupted on line %v\n%v", lineIdx, line))
-		}
-
-		ds.data[kv[0]] = newEntry(kv[1])
-		lineIdx++
-	}
-
-	log.Println("Data loaded successfully")
-
-	return nil
-}
-
-// TODO change this to maybe incude sequential writes to file
-// comparing keys and values and only writing them if they are changed
-func (ds *DataStore) Dump() error {
-	err := os.WriteFile(_DEFAULT_FILE_PATH, []byte(ds.String()), 0644)
-
-	if err != nil {
-		return err
-	}
-
-	log.Println("Data dumped successfully")
-
-	return nil
-}
