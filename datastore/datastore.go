@@ -1,7 +1,7 @@
 package datastore
 
 import (
-  "fmt"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -9,18 +9,17 @@ import (
 
 const _DELIMITER = ";"
 const (
-  _ok = "Ok"
-  _missing_command = "Missing command"
-  _incorrect_command = "Command incorrect"
+	missing_command   = "Missing command"
+	incorrect_command = "Command incorrect"
 )
 
 // think of separating this
 func okResponse(message string) string {
-  return fmt.Sprintf("[OK] %v", message)
+	return fmt.Sprintf("[OK] %v", message)
 }
 
 func errResponse(message string) string {
-  return fmt.Sprintf("[ERR] %v", message)
+	return fmt.Sprintf("[ERR] %v", message)
 }
 
 type entry struct {
@@ -38,14 +37,14 @@ func (e entry) String() string {
 }
 
 func newEntry(val string) entry {
-  var dtype string
-  _, err := strconv.Atoi(val)
+	var dtype string
+	_, err := strconv.Atoi(val)
 
-  if err != nil {
-    dtype = "string"
-  } else {
-    dtype = "int"
-  }
+	if err != nil {
+		dtype = "string"
+	} else {
+		dtype = "int"
+	}
 
 	return entry{val, dtype}
 }
@@ -65,29 +64,46 @@ func NewDataStore() DataStore {
 }
 
 func (ds *DataStore) HandleQuery(query string) string {
-  var res string
-  var err string
+	var res string
+	var err error
 	q := strings.Split(strings.Trim(query, "\n"), " ")
 
-  if len(q) < 2 {
-    return errResponse(_incorrect_command + " " + query)
-  }
+	if len(q) < 2 {
+		return errResponse(incorrect_command + " " + query)
+	}
 
 	switch q[0] {
 	case "get":
 		res = ds.get(q[1])
-    return okResponse(res)
+		return okResponse(res)
 	case "set":
+		if len(q) != 3 {
+			return errResponse(incorrect_command + " " + query)
+		}
 		ds.set(q[1], q[2])
 		return okResponse(res)
-  case "incr":
-    err = ds.incr(q[1])
-    if err != "" {
-      return errResponse(err)
+	case "incr":
+		err = ds.incr(q[1])
+		if err != nil {
+			return errResponse(err.Error())
+		}
+		return okResponse(res)
+	case "exists":
+		exists := ds.exists(q[1])
+		return okResponse(strconv.FormatBool(exists))
+	case "del":
+		err = ds.del(q[1])
+		if err != nil {
+			return errResponse(err.Error())
+		}
+		return okResponse(res)
+  case "type":
+    res, err = ds.dtype(q[1])
+    if err != nil {
+      return errResponse(err.Error())
     }
     return okResponse(res)
 	}
 
-	return errResponse(_incorrect_command + " " + query)
+	return errResponse(incorrect_command + " " + query)
 }
-

@@ -71,7 +71,7 @@ func (s *server) dump() {
 	err := s.ds.Dump()
 
 	if err != nil {
-		log.Fatal("Error loading data", err)
+		log.Fatal("Error dumping data", err)
 		os.Exit(1)
 	}
 }
@@ -82,7 +82,7 @@ func (s *server) dumpInterval(interval time.Duration) {
 		err := s.ds.Dump()
 
 		if err != nil {
-			log.Println("Error loading data", err)
+			log.Println("Error dumping data", err) // dont want to exit after unsuccessfull save
 		}
 	}
 }
