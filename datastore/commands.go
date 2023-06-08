@@ -116,3 +116,10 @@ func (ds *DataStore) expire(key string, ttlStr string) error {
 	ds.mu.Unlock()
 	return errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
+
+func (ds *DataStore) setexp(key , value string, ttlStr string) error {
+  ds.set(key, value)
+   return ds.expire(key, ttlStr)
+}
+
+

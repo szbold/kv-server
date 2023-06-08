@@ -128,6 +128,17 @@ func (ds *DataStore) HandleQuery(query string) string {
 			return errResponse(err.Error())
 		}
 		return okResponse(res)
+  case "setexp":
+		if len(q) != 4 {
+			return errResponse(incorrect_command + " " + query)
+		}
+
+		err = ds.setexp(q[1], q[2], q[3])
+
+		if err != nil {
+			return errResponse(err.Error())
+		}
+		return okResponse(res)
 	}
 
 	return errResponse(incorrect_command + " " + query)
