@@ -9,6 +9,8 @@ import (
   "strings"
 )
 
+const _DEFAULT_FILE_PATH = "/tmp/kvdata"
+
 func (ds *DataStore) Load() error {
 	file, err := os.OpenFile(_DEFAULT_FILE_PATH, os.O_RDONLY|os.O_CREATE, 0644)
 
@@ -53,3 +55,4 @@ func (ds *DataStore) Dump() error {
 
 	return nil
 }
+

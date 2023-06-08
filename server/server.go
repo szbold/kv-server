@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type server struct {
@@ -25,6 +26,8 @@ func (s *server) Run() {
 
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+  go s.dumpInterval(time.Minute * 2)
 
 	go func() {
 		<-c
@@ -70,6 +73,17 @@ func (s *server) dump() {
 	if err != nil {
 		log.Fatal("Error loading data", err)
 		os.Exit(1)
+	}
+}
+
+func (s *server) dumpInterval(interval time.Duration) {
+	for {
+		time.Sleep(interval)
+		err := s.ds.Dump()
+
+		if err != nil {
+			log.Println("Error loading data", err)
+		}
 	}
 }
 

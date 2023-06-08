@@ -7,7 +7,6 @@ import (
 	"sync"
 )
 
-const _DEFAULT_FILE_PATH = "/tmp/kvdata"
 const _DELIMITER = ";"
 const (
   _ok = "Ok"
