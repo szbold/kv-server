@@ -33,7 +33,7 @@ func (ds *DataStore) Load() error {
 			return errors.New(fmt.Sprintf("Data posssibly corrupted on line %v\n%v", lineIdx, line))
 		}
 
-		ds.data[kv[0]] = newEntry(kv[1])
+		ds.data[kv[0]] = newEntry(kv[1], nil)
 		lineIdx++
 	}
 

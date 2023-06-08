@@ -11,7 +11,7 @@ func (ds *DataStore) set(key, value string) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	ds.data[key] = newEntry(value)
+	ds.data[key] = newEntry(value, nil)
 }
 
 func (ds *DataStore) get(key string) string {
@@ -35,7 +35,7 @@ func (ds *DataStore) incr(key string) error {
 			// error cant occur since data is of int type
 			tmp, _ := strconv.Atoi(ds.data[key].value)
 			newVal := strconv.Itoa(tmp + 1)
-			ds.data[key] = newEntry(newVal)
+			ds.data[key] = newEntry(newVal, nil)
 
 			return nil
 		}
@@ -95,21 +95,14 @@ func (ds *DataStore) expire(key string, ttlStr string) error {
 
 	ds.mu.Lock()
 
-	if entry, ok := ds.data[key]; ok {
-		ds.data[key] = newEntryExp(entry.value, uint(ttl))
+	if e, ok := ds.data[key]; ok {
+    ch := make(chan int, 1)
+    e.ttlChan = ch
+		ds.data[key] = e
 		ds.mu.Unlock()
-		go func() {
-			liveTtl := ttl
-			for {
-				time.Sleep(time.Second)
-				liveTtl--
 
-				if liveTtl == 0 {
-					_ = ds.del(key)
-					return
-				}
-			}
-		}()
+		go ds.emitTtl(&e, key, ttl)
+
 		return nil
 	}
 
@@ -117,9 +110,38 @@ func (ds *DataStore) expire(key string, ttlStr string) error {
 	return errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
 
-func (ds *DataStore) setexp(key , value string, ttlStr string) error {
-  ds.set(key, value)
-   return ds.expire(key, ttlStr)
+func (ds *DataStore) emitTtl(e *entry, key string, ttl int) {
+  defer close(e.ttlChan)
+	e.ttlChan <- ttl
+
+	for {
+		go func() {
+			if len(e.ttlChan) == 1 {
+				<-e.ttlChan
+			}
+		}()
+
+		e.ttlChan <- ttl
+
+		time.Sleep(time.Second)
+		ttl--
+
+		if ttl == 0 {
+			_ = ds.del(key)
+			return
+		}
+	}
 }
 
+func (ds *DataStore) setexp(key, value string, ttlStr string) error {
+	ds.set(key, value)
+	return ds.expire(key, ttlStr)
+}
 
+func (ds *DataStore) ttl(key string) (string, error) {
+	if _, ok := ds.data[key]; ok {
+		return strconv.Itoa(<-ds.data[key].ttlChan), nil
+	}
+
+	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
+}

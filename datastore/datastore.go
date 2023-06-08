@@ -25,7 +25,7 @@ func errResponse(message string) string {
 type entry struct {
 	value string
 	dtype string
-	ttl   int
+  ttlChan chan int
 }
 
 type DataStore struct {
@@ -37,7 +37,7 @@ func (e entry) String() string {
 	return e.value
 }
 
-func newEntry(val string) entry {
+func newEntry(val string, ttlChan chan int) entry {
 	var dtype string
 	_, err := strconv.Atoi(val)
 
@@ -47,22 +47,8 @@ func newEntry(val string) entry {
 		dtype = "int"
 	}
 
-	return entry{val, dtype, -1}
+	return entry{val, dtype, ttlChan}
 }
-
-func newEntryExp(val string, ttl uint) entry {
-	var dtype string
-	_, err := strconv.Atoi(val)
-
-	if err != nil {
-		dtype = "string"
-	} else {
-		dtype = "int"
-	}
-
-	return entry{val, dtype, int(ttl)}
-}
-
 func (ds *DataStore) String() string {
 	var result string
 
@@ -86,6 +72,7 @@ func (ds *DataStore) HandleQuery(query string) string {
 		return errResponse(incorrect_command + " " + query)
 	}
 
+  // might refactor into less returns and just set res and err in every case
 	switch q[0] {
 	case "get":
 		res = ds.get(q[1])
@@ -139,6 +126,14 @@ func (ds *DataStore) HandleQuery(query string) string {
 			return errResponse(err.Error())
 		}
 		return okResponse(res)
+  case "ttl":
+    res, err = ds.ttl(q[1])
+
+    if err != nil {
+      return errResponse(err.Error())
+    }
+
+    return okResponse(res)
 	}
 
 	return errResponse(incorrect_command + " " + query)
