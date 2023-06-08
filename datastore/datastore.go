@@ -25,6 +25,7 @@ func errResponse(message string) string {
 type entry struct {
 	value string
 	dtype string
+	ttl   int
 }
 
 type DataStore struct {
@@ -46,7 +47,20 @@ func newEntry(val string) entry {
 		dtype = "int"
 	}
 
-	return entry{val, dtype}
+	return entry{val, dtype, -1}
+}
+
+func newEntryExp(val string, ttl uint) entry {
+	var dtype string
+	_, err := strconv.Atoi(val)
+
+	if err != nil {
+		dtype = "string"
+	} else {
+		dtype = "int"
+	}
+
+	return entry{val, dtype, int(ttl)}
 }
 
 func (ds *DataStore) String() string {
@@ -97,12 +111,23 @@ func (ds *DataStore) HandleQuery(query string) string {
 			return errResponse(err.Error())
 		}
 		return okResponse(res)
-  case "type":
-    res, err = ds.dtype(q[1])
-    if err != nil {
-      return errResponse(err.Error())
-    }
-    return okResponse(res)
+	case "type":
+		res, err = ds.dtype(q[1])
+		if err != nil {
+			return errResponse(err.Error())
+		}
+		return okResponse(res)
+	case "expire":
+		if len(q) != 3 {
+			return errResponse(incorrect_command + " " + query)
+		}
+
+		err = ds.expire(q[1], q[2])
+
+		if err != nil {
+			return errResponse(err.Error())
+		}
+		return okResponse(res)
 	}
 
 	return errResponse(incorrect_command + " " + query)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 func (ds *DataStore) set(key, value string) {
@@ -79,4 +80,39 @@ func (ds *DataStore) dtype(key string) (string, error) {
 	}
 
 	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
+}
+
+func (ds *DataStore) expire(key string, ttlStr string) error {
+	ttl, err := strconv.Atoi(ttlStr)
+
+	if err != nil {
+		return errors.New(fmt.Sprint("TTL should be int found string"))
+	}
+
+	if ttl < 1 {
+		return errors.New(fmt.Sprint("TTL should be at least 1"))
+	}
+
+	ds.mu.Lock()
+
+	if entry, ok := ds.data[key]; ok {
+		ds.data[key] = newEntryExp(entry.value, uint(ttl))
+		ds.mu.Unlock()
+		go func() {
+			liveTtl := ttl
+			for {
+				time.Sleep(time.Second)
+				liveTtl--
+
+				if liveTtl == 0 {
+					_ = ds.del(key)
+					return
+				}
+			}
+		}()
+		return nil
+	}
+
+	ds.mu.Unlock()
+	return errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
