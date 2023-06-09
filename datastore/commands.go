@@ -11,7 +11,16 @@ func (ds *DataStore) set(key, value string) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	ds.data[key] = newEntry(value, nil)
+	var t dtype
+	_, err := strconv.Atoi(value)
+
+	if err != nil {
+		t = t_string
+	} else {
+		t = t_int
+	}
+
+	ds.data[key] = newEntry(value, t)
 }
 
 func (ds *DataStore) get(key string) string {
@@ -25,21 +34,20 @@ func (ds *DataStore) get(key string) string {
 	return "nil"
 }
 
-// a bit hacky because error does not implement stringer for some reaseon ????
 func (ds *DataStore) incr(key string) error {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if _, ok := ds.data[key]; ok {
-		if ds.data[key].dtype == "int" {
+		if ds.data[key].dataType == t_int {
 			// error cant occur since data is of int type
 			tmp, _ := strconv.Atoi(ds.data[key].value)
 			newVal := strconv.Itoa(tmp + 1)
-			ds.data[key] = newEntry(newVal, nil)
+			ds.data[key] = newEntry(newVal, t_int)
 
 			return nil
 		}
-		return errors.New(fmt.Sprintf("Cannot run incr on value: %v with type: %v", ds.data[key].value, ds.data[key].dtype))
+		return errors.New(fmt.Sprintf("Cannot run incr on value: %v with type: %v", ds.data[key].value, ds.data[key].dataType))
 	}
 
 	return errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
@@ -72,14 +80,23 @@ func (ds *DataStore) del(key string) error {
 }
 
 func (ds *DataStore) dtype(key string) (string, error) {
+	var strType string
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, ok := ds.data[key]; ok {
-		return ds.data[key].dtype, nil
+	if e, ok := ds.data[key]; ok {
+		switch e.dataType {
+		case t_string:
+			strType = "string"
+		case t_int:
+			strType = "int"
+		case t_list:
+			strType = "list"
+		}
+		return strType, nil
 	}
 
-	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
+	return strType, errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
 
 func (ds *DataStore) expire(key string, ttlStr string) error {
@@ -96,12 +113,12 @@ func (ds *DataStore) expire(key string, ttlStr string) error {
 	ds.mu.Lock()
 
 	if e, ok := ds.data[key]; ok {
-    ch := make(chan int, 1)
-    e.ttlChan = ch
+		ch := make(chan int, 1)
+		e.ttlChan = ch
 		ds.data[key] = e
 		ds.mu.Unlock()
 
-		go ds.emitTtl(&e, key, ttl)
+		go ds.emitTtl(key, ttl)
 
 		return nil
 	}
@@ -110,8 +127,9 @@ func (ds *DataStore) expire(key string, ttlStr string) error {
 	return errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
 
-func (ds *DataStore) emitTtl(e *entry, key string, ttl int) {
-  defer close(e.ttlChan)
+func (ds *DataStore) emitTtl(key string, ttl int) {
+	e, _ := ds.data[key]
+	defer close(e.ttlChan)
 	e.ttlChan <- ttl
 
 	for {
@@ -144,4 +162,8 @@ func (ds *DataStore) ttl(key string) (string, error) {
 	}
 
 	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
+}
+
+func (ds *DataStore) lpush(key string) (string, error) {
+  return "", nil
 }

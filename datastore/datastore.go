@@ -22,33 +22,11 @@ func errResponse(message string) string {
 	return fmt.Sprintf("[ERR] %v", message)
 }
 
-type entry struct {
-	value string
-	dtype string
-  ttlChan chan int
-}
-
 type DataStore struct {
 	data map[string]entry
 	mu   sync.Mutex
 }
 
-func (e entry) String() string {
-	return e.value
-}
-
-func newEntry(val string, ttlChan chan int) entry {
-	var dtype string
-	_, err := strconv.Atoi(val)
-
-	if err != nil {
-		dtype = "string"
-	} else {
-		dtype = "int"
-	}
-
-	return entry{val, dtype, ttlChan}
-}
 func (ds *DataStore) String() string {
 	var result string
 
@@ -72,69 +50,44 @@ func (ds *DataStore) HandleQuery(query string) string {
 		return errResponse(incorrect_command + " " + query)
 	}
 
-  // might refactor into less returns and just set res and err in every case
+	// might refactor into less returns and just set res and err in every case
 	switch q[0] {
 	case "get":
 		res = ds.get(q[1])
-		return okResponse(res)
 	case "set":
 		if len(q) != 3 {
 			return errResponse(incorrect_command + " " + query)
 		}
 		ds.set(q[1], q[2])
-		return okResponse(res)
 	case "incr":
 		err = ds.incr(q[1])
-		if err != nil {
-			return errResponse(err.Error())
-		}
-		return okResponse(res)
 	case "exists":
 		exists := ds.exists(q[1])
-		return okResponse(strconv.FormatBool(exists))
+		res = strconv.FormatBool(exists)
 	case "del":
 		err = ds.del(q[1])
-		if err != nil {
-			return errResponse(err.Error())
-		}
-		return okResponse(res)
 	case "type":
 		res, err = ds.dtype(q[1])
-		if err != nil {
-			return errResponse(err.Error())
-		}
-		return okResponse(res)
 	case "expire":
 		if len(q) != 3 {
 			return errResponse(incorrect_command + " " + query)
 		}
 
 		err = ds.expire(q[1], q[2])
-
-		if err != nil {
-			return errResponse(err.Error())
-		}
-		return okResponse(res)
-  case "setexp":
+	case "setexp":
 		if len(q) != 4 {
 			return errResponse(incorrect_command + " " + query)
 		}
 
 		err = ds.setexp(q[1], q[2], q[3])
-
-		if err != nil {
-			return errResponse(err.Error())
-		}
-		return okResponse(res)
-  case "ttl":
-    res, err = ds.ttl(q[1])
-
-    if err != nil {
-      return errResponse(err.Error())
-    }
-
-    return okResponse(res)
+	case "ttl":
+		res, err = ds.ttl(q[1])
+	default:
+		return errResponse(incorrect_command + " " + query)
 	}
 
-	return errResponse(incorrect_command + " " + query)
+	if err != nil {
+		return errResponse(err.Error())
+	}
+	return okResponse(res)
 }

@@ -27,13 +27,19 @@ func (ds *DataStore) Load() error {
 	for scanner.Scan() {
 		line = scanner.Text()
 
-		kv := strings.Split(line, _DELIMITER)
+		entry := strings.Split(line, _DELIMITER)
 
-		if len(kv) != 2 {
+		if len(entry) != 3 {
 			return errors.New(fmt.Sprintf("Data posssibly corrupted on line %v\n%v", lineIdx, line))
 		}
 
-		ds.data[kv[0]] = newEntry(kv[1], nil)
+    t, err := stringToDtype(entry[2])
+
+    if err != nil {
+      log.Println("Failed to load value of type", entry[2])
+    }
+
+		ds.data[entry[0]] = newEntry(entry[1], t)
 		lineIdx++
 	}
 
