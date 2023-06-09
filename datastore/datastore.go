@@ -82,6 +82,18 @@ func (ds *DataStore) HandleQuery(query string) string {
 		err = ds.setexp(q[1], q[2], q[3])
 	case "ttl":
 		res, err = ds.ttl(q[1])
+  case "lpush":
+    if len(q) < 3 {
+			return errResponse(incorrect_command + " " + query)
+    }
+
+    ds.lpush(q[1], q[2:])
+  case "rpush":
+    if len(q) < 3 {
+			return errResponse(incorrect_command + " " + query)
+    }
+
+    ds.rpush(q[1], q[2:])
 	default:
 		return errResponse(incorrect_command + " " + query)
 	}

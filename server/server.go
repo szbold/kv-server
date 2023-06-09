@@ -27,7 +27,7 @@ func (s *server) Run() {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-  go s.dumpInterval(time.Minute * 2)
+	go s.dumpInterval(time.Minute * 2)
 
 	go func() {
 		<-c
@@ -107,7 +107,9 @@ func (s *server) handleConn(conn net.Conn) {
 
 		res := s.ds.HandleQuery(query)
 
-		log.Println(conn.RemoteAddr(), res)
+		if strings.HasPrefix(res, "[ERR]") {
+			log.Println(conn.RemoteAddr(), res)
+		}
 
 		conn.Write([]byte(res + "\n"))
 	}

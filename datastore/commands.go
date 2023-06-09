@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -164,6 +165,30 @@ func (ds *DataStore) ttl(key string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
 
-func (ds *DataStore) lpush(key string) (string, error) {
-  return "", nil
+func (ds *DataStore) lpush(key string, values []string) {
+	strVal := strings.Join(values, ",")
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	if e, ok := ds.data[key]; ok {
+		e.value = strVal + "," + e.value
+		ds.data[key] = e
+	} else {
+		ds.data[key] = newEntry(strVal, t_list)
+	}
+}
+
+func (ds *DataStore) rpush(key string, values []string) {
+	strVal := strings.Join(values, ",")
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	if e, ok := ds.data[key]; ok {
+		e.value = e.value + "," + strVal
+		ds.data[key] = e
+	} else {
+		ds.data[key] = newEntry(strVal, t_list)
+	}
 }
