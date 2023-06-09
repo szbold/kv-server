@@ -18,4 +18,4 @@
 * lpush key ...values
 * rpush key ...values
 
-Server runs on localhost:6379 and saves data to /tmp/kvdata
+Server dumps data to /tmp/kvdata
