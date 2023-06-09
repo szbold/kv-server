@@ -24,15 +24,15 @@ func (ds *DataStore) set(key, value string) {
 	ds.data[key] = newEntry(value, t)
 }
 
-func (ds *DataStore) get(key string) string {
+func (ds *DataStore) get(key string) (string, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, exists := ds.data[key]; exists {
-		return e.value
+		return e.value, nil
 	}
 
-	return "nil"
+	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
 
 func (ds *DataStore) incr(key string) error {
@@ -152,7 +152,7 @@ func (ds *DataStore) emitTtl(key string, ttl int) {
 	}
 }
 
-func (ds *DataStore) setexp(key, value string, ttlStr string) error {
+func (ds *DataStore) setexp(key, value, ttlStr string) error {
 	ds.set(key, value)
 	return ds.expire(key, ttlStr)
 }
@@ -191,4 +191,59 @@ func (ds *DataStore) rpush(key string, values []string) {
 	} else {
 		ds.data[key] = newEntry(strVal, t_list)
 	}
+}
+
+func (ds *DataStore) llen(key string) (string, error) {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	if e, exists := ds.data[key]; exists {
+		if e.dataType == t_list {
+			res := strings.Count(e.value, ",") + 1
+			return strconv.Itoa(res), nil
+		}
+
+		return "", errors.New(fmt.Sprintf("Value of type %v does not have property length", e.dataType.String()))
+	}
+
+	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
+}
+
+func (ds *DataStore) lrange(key, startStr, endStr string) (string, error) {
+	start, err := strconv.Atoi(startStr)
+
+	if err != nil {
+		return "", errors.New("Start should be a number value")
+	}
+
+	end, err := strconv.Atoi(endStr)
+
+	if err != nil {
+		return "", errors.New("End should be a number value")
+	}
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	if e, exists := ds.data[key]; exists {
+		if e.dataType == t_list {
+			list := strings.Split(e.value, ",")
+			if start > end {
+				start, end = end, start
+			}
+
+			if start < 0 {
+				start = 0
+			}
+
+			if end > len(list) - 1 {
+				end = len(list) - 1
+			}
+			return strings.Join(list[start:end + 1], ","), nil
+		}
+
+		return "", errors.New(fmt.Sprintf("Value of type %v does not have property length", e.dataType.String()))
+	}
+
+	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }

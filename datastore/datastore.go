@@ -53,7 +53,7 @@ func (ds *DataStore) HandleQuery(query string) string {
 	// might refactor into less returns and just set res and err in every case
 	switch q[0] {
 	case "get":
-		res = ds.get(q[1])
+		res, err = ds.get(q[1])
 	case "set":
 		if len(q) != 3 {
 			return errResponse(incorrect_command + " " + query)
@@ -82,18 +82,25 @@ func (ds *DataStore) HandleQuery(query string) string {
 		err = ds.setexp(q[1], q[2], q[3])
 	case "ttl":
 		res, err = ds.ttl(q[1])
-  case "lpush":
-    if len(q) < 3 {
+	case "lpush":
+		if len(q) < 3 {
 			return errResponse(incorrect_command + " " + query)
-    }
+		}
 
-    ds.lpush(q[1], q[2:])
-  case "rpush":
-    if len(q) < 3 {
+		ds.lpush(q[1], q[2:])
+	case "rpush":
+		if len(q) < 3 {
 			return errResponse(incorrect_command + " " + query)
-    }
+		}
 
-    ds.rpush(q[1], q[2:])
+		ds.rpush(q[1], q[2:])
+	case "llen":
+		res, err = ds.llen(q[1])
+	case "lrange":
+		if len(q) != 4 {
+			return errResponse(incorrect_command + " " + query)
+		}
+		res, err = ds.lrange(q[1], q[2], q[3])
 	default:
 		return errResponse(incorrect_command + " " + query)
 	}
