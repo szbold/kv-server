@@ -166,13 +166,13 @@ func (ds *DataStore) ttl(key string) (string, error) {
 }
 
 func (ds *DataStore) lpush(key string, values []string) {
-	strVal := strings.Join(values, ",")
+	strVal := strings.Join(values, list_delimiter)
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, ok := ds.data[key]; ok {
-		e.value = strVal + "," + e.value
+		e.value = strVal + list_delimiter + e.value
 		ds.data[key] = e
 	} else {
 		ds.data[key] = newEntry(strVal, t_list)
@@ -180,13 +180,13 @@ func (ds *DataStore) lpush(key string, values []string) {
 }
 
 func (ds *DataStore) rpush(key string, values []string) {
-	strVal := strings.Join(values, ",")
+	strVal := strings.Join(values, list_delimiter)
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, ok := ds.data[key]; ok {
-		e.value = e.value + "," + strVal
+		e.value = e.value + list_delimiter + strVal
 		ds.data[key] = e
 	} else {
 		ds.data[key] = newEntry(strVal, t_list)
@@ -199,7 +199,7 @@ func (ds *DataStore) llen(key string) (string, error) {
 
 	if e, exists := ds.data[key]; exists {
 		if e.dataType == t_list {
-			res := strings.Count(e.value, ",") + 1
+			res := strings.Count(e.value, list_delimiter) + 1
 			return strconv.Itoa(res), nil
 		}
 
@@ -227,7 +227,7 @@ func (ds *DataStore) lrange(key, startStr, endStr string) (string, error) {
 
 	if e, exists := ds.data[key]; exists {
 		if e.dataType == t_list {
-			list := strings.Split(e.value, ",")
+			list := strings.Split(e.value, list_delimiter)
 			if start > end {
 				start, end = end, start
 			}
@@ -236,14 +236,58 @@ func (ds *DataStore) lrange(key, startStr, endStr string) (string, error) {
 				start = 0
 			}
 
-			if end > len(list) - 1 {
+			if end > len(list)-1 {
 				end = len(list) - 1
 			}
-			return strings.Join(list[start:end + 1], ","), nil
+			return strings.Join(list[start:end+1], list_delimiter), nil
 		}
 
-		return "", errors.New(fmt.Sprintf("Value of type %v does not have property length", e.dataType.String()))
+		return "", errors.New(fmt.Sprintf("Cannot use lrange on %v", e.dataType.String()))
 	}
 
 	return "", errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
+}
+
+func (ds *DataStore) ltrim(key, startStr, endStr string) error {
+	start, err := strconv.Atoi(startStr)
+
+	if err != nil {
+		return errors.New("Start should be a number value")
+	}
+
+	end, err := strconv.Atoi(endStr)
+
+	if err != nil {
+		return errors.New("End should be a number value")
+	}
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	if e, exists := ds.data[key]; exists {
+		if e.dataType == t_list {
+			list := strings.Split(e.value, list_delimiter)
+			if start > end {
+				start, end = end, start
+			}
+
+			if start < 0 {
+				start = 0
+			}
+
+			if end > len(list)-1 {
+				end = len(list) - 1
+			}
+
+      list = list[start:end+1]
+      e.value = strings.Join(list, list_delimiter)
+      ds.data[key] = e
+
+			return nil
+		}
+
+		return errors.New(fmt.Sprintf("Cannot use ltrim on %v", e.dataType.String()))
+	}
+
+	return errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }

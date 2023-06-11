@@ -8,6 +8,7 @@ import (
 )
 
 const _DELIMITER = ";"
+const list_delimiter = ","
 const (
 	missing_command   = "Missing command"
 	incorrect_command = "Command incorrect"
@@ -101,6 +102,11 @@ func (ds *DataStore) HandleQuery(query string) string {
 			return errResponse(incorrect_command + " " + query)
 		}
 		res, err = ds.lrange(q[1], q[2], q[3])
+	case "ltrim":
+		if len(q) != 4 {
+			return errResponse(incorrect_command + " " + query)
+		}
+		err = ds.ltrim(q[1], q[2], q[3])
 	default:
 		return errResponse(incorrect_command + " " + query)
 	}
