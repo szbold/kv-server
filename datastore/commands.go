@@ -8,6 +8,19 @@ import (
 	"time"
 )
 
+
+func (ds *DataStore) keys() string {
+  var result []string
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+  for key := range ds.data {
+    result = append(result, key)
+  }
+
+  return strings.Join(result, ",")
+}
+
 func (ds *DataStore) set(key, value string) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()

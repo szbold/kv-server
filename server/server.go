@@ -107,10 +107,10 @@ func (s *server) handleConn(conn net.Conn) {
 
 		res := s.ds.HandleQuery(query)
 
-		if strings.HasPrefix(res, "[ERR]") {
+		if strings.HasPrefix(res, "-") {
 			log.Println(conn.RemoteAddr(), res)
 		}
 
-		conn.Write([]byte(res + "\n"))
+		conn.Write([]byte(res))
 	}
 }

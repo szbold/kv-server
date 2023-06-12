@@ -15,12 +15,28 @@ const (
 )
 
 // think of separating this
-func okResponse(message string) string {
-	return fmt.Sprintf("[OK] %v", message)
+func stringResponse(message string) string {
+	return fmt.Sprintf("+%v\r\n%v\r\n", len(message), message)
+}
+
+func intResponse(message string) string {
+	return fmt.Sprintf(":%v\r\n", message)
+}
+
+func listResponse(message string) string {
+  var result string
+  var listLength int
+
+  for _, item := range strings.Split(message, list_delimiter) {
+    result += fmt.Sprintf("$%v\r\n%v\r\n", len(item), item)
+    listLength++
+  }
+
+	return fmt.Sprintf("*%v\r\n%v\r\n", listLength, result)
 }
 
 func errResponse(message string) string {
-	return fmt.Sprintf("[ERR] %v", message)
+	return fmt.Sprintf("-%v\r\n%v\r\n", len(message), message)
 }
 
 type DataStore struct {
@@ -43,9 +59,16 @@ func NewDataStore() DataStore {
 }
 
 func (ds *DataStore) HandleQuery(query string) string {
-	var res string
+  if query == "keys" {
+    return listResponse(ds.keys())
+  }
+
+	var string_res string
+  var int_res string
+  var list_res string
 	var err error
 	q := strings.Split(strings.Trim(query, "\n"), " ")
+
 
 	if len(q) < 2 {
 		return errResponse(incorrect_command + " " + query)
@@ -54,7 +77,7 @@ func (ds *DataStore) HandleQuery(query string) string {
 	// might refactor into less returns and just set res and err in every case
 	switch q[0] {
 	case "get":
-		res, err = ds.get(q[1])
+		string_res, err = ds.get(q[1])
 	case "set":
 		if len(q) != 3 {
 			return errResponse(incorrect_command + " " + query)
@@ -64,11 +87,11 @@ func (ds *DataStore) HandleQuery(query string) string {
 		err = ds.incr(q[1])
 	case "exists":
 		exists := ds.exists(q[1])
-		res = strconv.FormatBool(exists)
+		string_res = strconv.FormatBool(exists)
 	case "del":
 		err = ds.del(q[1])
 	case "type":
-		res, err = ds.dtype(q[1])
+		string_res, err = ds.dtype(q[1])
 	case "expire":
 		if len(q) != 3 {
 			return errResponse(incorrect_command + " " + query)
@@ -82,7 +105,7 @@ func (ds *DataStore) HandleQuery(query string) string {
 
 		err = ds.setexp(q[1], q[2], q[3])
 	case "ttl":
-		res, err = ds.ttl(q[1])
+		int_res, err = ds.ttl(q[1])
 	case "lpush":
 		if len(q) < 3 {
 			return errResponse(incorrect_command + " " + query)
@@ -96,12 +119,12 @@ func (ds *DataStore) HandleQuery(query string) string {
 
 		ds.rpush(q[1], q[2:])
 	case "llen":
-		res, err = ds.llen(q[1])
+		int_res, err = ds.llen(q[1])
 	case "lrange":
 		if len(q) != 4 {
 			return errResponse(incorrect_command + " " + query)
 		}
-		res, err = ds.lrange(q[1], q[2], q[3])
+		list_res, err = ds.lrange(q[1], q[2], q[3])
 	case "ltrim":
 		if len(q) != 4 {
 			return errResponse(incorrect_command + " " + query)
@@ -114,5 +137,18 @@ func (ds *DataStore) HandleQuery(query string) string {
 	if err != nil {
 		return errResponse(err.Error())
 	}
-	return okResponse(res)
+  
+  if string_res != "" {
+    return stringResponse(string_res)
+  }
+
+  if int_res != "" {
+    return intResponse(int_res)
+  }
+
+  if list_res != "" {
+    return listResponse(list_res)
+  }
+
+	return stringResponse("OK")
 }
