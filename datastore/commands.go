@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+  "key-value-server/consts"
 )
 
 
@@ -67,7 +68,7 @@ func (ds *DataStore) incr(key string) error {
 	return errors.New(fmt.Sprintf("Key \"%v\" does not exist", key))
 }
 
-func (ds *DataStore) exists(key string) bool {
+func (ds *DataStore) exists(key string) string {
 	exists := false
 
 	ds.mu.Lock()
@@ -77,7 +78,7 @@ func (ds *DataStore) exists(key string) bool {
 		exists = true
 	}
 
-	return exists
+	return strconv.FormatBool(exists)
 }
 
 func (ds *DataStore) del(key string) error {
@@ -179,13 +180,13 @@ func (ds *DataStore) ttl(key string) (string, error) {
 }
 
 func (ds *DataStore) lpush(key string, values []string) {
-	strVal := strings.Join(values, list_delimiter)
+	strVal := strings.Join(values, consts.ListDelimiter)
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, ok := ds.data[key]; ok {
-		e.value = strVal + list_delimiter + e.value
+		e.value = strVal + consts.ListDelimiter + e.value
 		ds.data[key] = e
 	} else {
 		ds.data[key] = newEntry(strVal, t_list)
@@ -193,13 +194,13 @@ func (ds *DataStore) lpush(key string, values []string) {
 }
 
 func (ds *DataStore) rpush(key string, values []string) {
-	strVal := strings.Join(values, list_delimiter)
+	strVal := strings.Join(values, consts.ListDelimiter)
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, ok := ds.data[key]; ok {
-		e.value = e.value + list_delimiter + strVal
+		e.value = e.value + consts.ListDelimiter + strVal
 		ds.data[key] = e
 	} else {
 		ds.data[key] = newEntry(strVal, t_list)
@@ -212,7 +213,7 @@ func (ds *DataStore) llen(key string) (string, error) {
 
 	if e, exists := ds.data[key]; exists {
 		if e.dataType == t_list {
-			res := strings.Count(e.value, list_delimiter) + 1
+			res := strings.Count(e.value, consts.ListDelimiter) + 1
 			return strconv.Itoa(res), nil
 		}
 
@@ -240,7 +241,7 @@ func (ds *DataStore) lrange(key, startStr, endStr string) (string, error) {
 
 	if e, exists := ds.data[key]; exists {
 		if e.dataType == t_list {
-			list := strings.Split(e.value, list_delimiter)
+			list := strings.Split(e.value, consts.ListDelimiter)
 			if start > end {
 				start, end = end, start
 			}
@@ -252,7 +253,7 @@ func (ds *DataStore) lrange(key, startStr, endStr string) (string, error) {
 			if end > len(list)-1 {
 				end = len(list) - 1
 			}
-			return strings.Join(list[start:end+1], list_delimiter), nil
+			return strings.Join(list[start:end+1], consts.ListDelimiter), nil
 		}
 
 		return "", errors.New(fmt.Sprintf("Cannot use lrange on %v", e.dataType.String()))
@@ -279,7 +280,7 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) error {
 
 	if e, exists := ds.data[key]; exists {
 		if e.dataType == t_list {
-			list := strings.Split(e.value, list_delimiter)
+			list := strings.Split(e.value, consts.ListDelimiter)
 			if start > end {
 				start, end = end, start
 			}
@@ -293,7 +294,7 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) error {
 			}
 
       list = list[start:end+1]
-      e.value = strings.Join(list, list_delimiter)
+      e.value = strings.Join(list, consts.ListDelimiter)
       ds.data[key] = e
 
 			return nil

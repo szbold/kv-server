@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"key-value-server/consts"
 	"log"
 	"os"
-  "strings"
+	"strings"
 )
 
 const _DEFAULT_FILE_PATH = "/tmp/kvdata"
@@ -27,7 +28,7 @@ func (ds *DataStore) Load() error {
 	for scanner.Scan() {
 		line = scanner.Text()
 
-		entry := strings.Split(line, _DELIMITER)
+		entry := strings.Split(line, consts.FileDelimiter)
 
 		if len(entry) != 3 {
 			return errors.New(fmt.Sprintf("Data posssibly corrupted on line %v\n%v", lineIdx, line))

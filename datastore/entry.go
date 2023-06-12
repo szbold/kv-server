@@ -1,5 +1,7 @@
 package datastore
 
+import "key-value-server/consts"
+
 type entry struct {
 	value    string
 	dataType dtype
@@ -7,7 +9,7 @@ type entry struct {
 }
 
 func (e entry) String() string {
-	return e.value + _DELIMITER + e.dataType.String()
+	return e.value + consts.FileDelimiter + e.dataType.String()
 }
 
 func newEntry(val string, t dtype) entry {
