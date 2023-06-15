@@ -5,10 +5,10 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/signal"
+	// "os/signal"
 	"strings"
-	"syscall"
-	"time"
+	// "syscall"
+	// "time"
 )
 
 type server struct {
@@ -24,18 +24,18 @@ func NewKeyValueServer(addr string) server {
 func (s *server) Run() {
 	var err error
 
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	// c := make(chan os.Signal, 2)
+	// signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	go s.dumpInterval(time.Minute * 2)
+	// go s.dumpInterval(time.Minute * 2)
 
-	go func() {
-		<-c
-		s.dump()
-		os.Exit(0)
-	}()
+	// go func() {
+	// 	<-c
+	// 	s.dump()
+	// 	os.Exit(0)
+	// }()
 
-	s.load()
+	// s.load()
 
 	listener, err := net.Listen("tcp", s.addr)
 
@@ -58,34 +58,34 @@ func (s *server) Run() {
 	}
 }
 
-func (s *server) load() {
-	err := s.ds.Load()
+// func (s *server) load() {
+// 	err := s.ds.Load()
 
-	if err != nil {
-		log.Fatal("Error loading data ", err)
-		os.Exit(1)
-	}
-}
+// 	if err != nil {
+// 		log.Fatal("Error loading data ", err)
+// 		os.Exit(1)
+// 	}
+// }
 
-func (s *server) dump() {
-	err := s.ds.Dump()
+// func (s *server) dump() {
+// 	err := s.ds.Dump()
 
-	if err != nil {
-		log.Fatal("Error dumping data", err)
-		os.Exit(1)
-	}
-}
+// 	if err != nil {
+// 		log.Fatal("Error dumping data", err)
+// 		os.Exit(1)
+// 	}
+// }
 
-func (s *server) dumpInterval(interval time.Duration) {
-	for {
-		time.Sleep(interval)
-		err := s.ds.Dump()
+// func (s *server) dumpInterval(interval time.Duration) {
+// 	for {
+// 		time.Sleep(interval)
+// 		err := s.ds.Dump()
 
-		if err != nil {
-			log.Println("Error dumping data", err) // dont want to exit after unsuccessfull save
-		}
-	}
-}
+// 		if err != nil {
+// 			log.Println("Error dumping data", err) // dont want to exit after unsuccessfull save
+// 		}
+// 	}
+// }
 
 func (s *server) handleConn(conn net.Conn) {
 	defer conn.Close()
@@ -107,10 +107,6 @@ func (s *server) handleConn(conn net.Conn) {
 
 		res := s.ds.HandleQuery(query)
 
-		if strings.HasPrefix(res, "-") {
-			log.Println(conn.RemoteAddr(), res)
-		}
-
-		conn.Write([]byte(res))
+		conn.Write(res)
 	}
 }
