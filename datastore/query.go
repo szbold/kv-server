@@ -3,7 +3,6 @@ package datastore
 import (
 	"key-value-server/consts"
 	"key-value-server/datatypes"
-	"key-value-server/fmt"
 	"strconv"
 	"strings"
 )
@@ -17,7 +16,7 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 	q := strings.Split(strings.Trim(query, "\n"), " ")
 
 	if len(q) < 2 {
-		return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+		return datatypes.NewKvError(consts.IncorrectCommand + " " + query).Response()
 	}
 
 	switch q[0] {
@@ -25,7 +24,8 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 		res = ds.get(q[1])
 	case "set":
 		if len(q) != 3 {
-			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 		}
 
 		var value datatypes.Data
@@ -37,7 +37,7 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			value = datatypes.KvInt(num)
 		}
 
-		ds.set(q[1], value)
+		res = ds.set(q[1], value)
 	case "incr":
 		res = ds.incr(q[1])
 	case "exists":
@@ -48,13 +48,15 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 		res = ds.dtype(q[1])
 	case "expire":
 		if len(q) != 3 {
-			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 		}
 
 		res = ds.expire(q[1], q[2])
 	case "setexp":
 		if len(q) != 4 {
-			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 		}
 
 		var value datatypes.Data
@@ -71,30 +73,35 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 		res = ds.ttl(q[1])
 	case "lpush":
 		if len(q) < 3 {
-			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 		}
 
-		ds.lpush(q[1], q[2:])
+		res = ds.lpush(q[1], q[2:])
 	case "rpush":
 		if len(q) < 3 {
-			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 		}
 
-		ds.rpush(q[1], q[2:])
+		res = ds.rpush(q[1], q[2:])
 	case "llen":
 		res = ds.llen(q[1])
 	case "lrange":
 		if len(q) != 4 {
-			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 		}
 		res = ds.lrange(q[1], q[2], q[3])
 	case "ltrim":
 		if len(q) != 4 {
-			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 		}
 		res = ds.ltrim(q[1], q[2], q[3])
 	default:
-		return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
+			res = datatypes.NewIncorrectCommandError(query)
+      break
 	}
 
 	return res.Response()

@@ -1,5 +1,7 @@
 # Simple key-value datastore (redis clone)
 
+## Data transfered over tcp with REDIS protocol
+
 ## Supported types
 * int
 * string
@@ -24,4 +26,5 @@
   - if start is negative it starts from the beginning of the list
   - if end is larger than the length of the list then it is sent to the length of the list
 
-Server dumps data to /tmp/kvdata
+<!-- saving is temporarily disabled -->
+<!-- Server dumps data to /tmp/kvdata -->

@@ -1,9 +1,10 @@
 package consts
 
 const (
-	FileDelimiter    = ";"
-	ListDelimiter    = ","
-	MissingCommand   = "Missing command"
-	IncorrectCommand = "Command incorrect"
-  ResponseDelimiter = "\r\n"
+	FileDelimiter     = ";"
+	ListDelimiter     = ","
+	MissingCommand    = "Missing command"
+	IncorrectCommand  = "Command incorrect"
+	Ok                = "OK"
+	ResponseDelimiter = "\r\n"
 )
