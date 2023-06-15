@@ -2,21 +2,19 @@ package datastore
 
 import (
 	"key-value-server/consts"
+	"key-value-server/datatypes"
 	"key-value-server/fmt"
+	"strconv"
 	"strings"
 )
 
-func (ds *DataStore) HandleQuery(query string) string {
-  if query == "keys" {
-    return fmt.ListResponse(ds.keys())
-  }
+func (ds *DataStore) HandleQuery(query string) []byte {
+	if query == "keys" {
+		return ds.keys().Response()
+	}
 
-	var string_res string
-  var int_res string
-  var list_res string
-	var err error
+	var res datatypes.Data
 	q := strings.Split(strings.Trim(query, "\n"), " ")
-
 
 	if len(q) < 2 {
 		return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
@@ -24,34 +22,53 @@ func (ds *DataStore) HandleQuery(query string) string {
 
 	switch q[0] {
 	case "get":
-		string_res, err = ds.get(q[1])
+		res = ds.get(q[1])
 	case "set":
 		if len(q) != 3 {
 			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
 		}
-		ds.set(q[1], q[2])
+
+		var value datatypes.Data
+		num, err := strconv.Atoi(q[2])
+
+		if err != nil {
+			value = datatypes.KvString(q[2])
+		} else {
+			value = datatypes.KvInt(num)
+		}
+
+		ds.set(q[1], value)
 	case "incr":
-		err = ds.incr(q[1])
+		res = ds.incr(q[1])
 	case "exists":
-		string_res = ds.exists(q[1])
+		res = ds.exists(q[1])
 	case "del":
-		err = ds.del(q[1])
+		res = ds.del(q[1])
 	case "type":
-		string_res, err = ds.dtype(q[1])
+		res = ds.dtype(q[1])
 	case "expire":
 		if len(q) != 3 {
 			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
 		}
 
-		err = ds.expire(q[1], q[2])
+		res = ds.expire(q[1], q[2])
 	case "setexp":
 		if len(q) != 4 {
 			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
 		}
 
-		err = ds.setexp(q[1], q[2], q[3])
+		var value datatypes.Data
+		num, err := strconv.Atoi(q[2])
+
+		if err != nil {
+			value = datatypes.KvString(q[2])
+		} else {
+			value = datatypes.KvInt(num)
+		}
+
+		res = ds.setexp(q[1], value, q[3])
 	case "ttl":
-		int_res, err = ds.ttl(q[1])
+		res = ds.ttl(q[1])
 	case "lpush":
 		if len(q) < 3 {
 			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
@@ -65,36 +82,20 @@ func (ds *DataStore) HandleQuery(query string) string {
 
 		ds.rpush(q[1], q[2:])
 	case "llen":
-		int_res, err = ds.llen(q[1])
+		res = ds.llen(q[1])
 	case "lrange":
 		if len(q) != 4 {
 			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
 		}
-		list_res, err = ds.lrange(q[1], q[2], q[3])
+		res = ds.lrange(q[1], q[2], q[3])
 	case "ltrim":
 		if len(q) != 4 {
 			return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
 		}
-		err = ds.ltrim(q[1], q[2], q[3])
+		res = ds.ltrim(q[1], q[2], q[3])
 	default:
 		return fmt.ErrResponse(consts.IncorrectCommand + " " + query)
 	}
 
-	if err != nil {
-		return fmt.ErrResponse(err.Error())
-	}
-  
-  if string_res != "" {
-    return fmt.StringResponse(string_res)
-  }
-
-  if int_res != "" {
-    return fmt.IntResponse(int_res)
-  }
-
-  if list_res != "" {
-    return fmt.ListResponse(list_res)
-  }
-
-	return fmt.StringResponse("OK")
+	return res.Response()
 }

@@ -1,7 +1,7 @@
 package datastore
 
 import (
-  "key-value-server/consts"
+	"key-value-server/consts"
 	"sync"
 )
 
@@ -23,4 +23,3 @@ func (ds *DataStore) String() string {
 func NewDataStore() DataStore {
 	return DataStore{data: make(map[string]entry)}
 }
-
