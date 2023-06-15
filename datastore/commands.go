@@ -195,7 +195,7 @@ func (ds *DataStore) rpush(key string, values []string) types.Data {
 			return types.NewKvError(fmt.Sprintf("Cannot rpush on type %v", e.value.Type()))
 		}
 	} else {
-		ds.data[key] = newEntry(list)
+		ds.data[key] = newEntry(types.KvList(values))
 	}
 
 	return types.KvString(consts.Ok)
