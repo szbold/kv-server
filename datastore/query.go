@@ -99,6 +99,29 @@ func (ds *DataStore) HandleQuery(query string) []byte {
       break
 		}
 		res = ds.ltrim(q[1], q[2], q[3])
+  case "sadd":
+		if len(q) != 3 {
+			res = NewIncorrectCommandError(query)
+      break
+		}
+
+    res = ds.sadd(q[1], q[2])
+  case "sismember":
+		if len(q) != 3 {
+			res = NewIncorrectCommandError(query)
+      break
+		}
+
+    res = ds.sismember(q[1], q[2])
+  case "sinter":
+		if len(q) != 3 {
+			res = NewIncorrectCommandError(query)
+      break
+		}
+
+    res = ds.sinter(q[1], q[2])
+  case "scard":
+    res = ds.scard(q[1])
 	default:
 			res = NewIncorrectCommandError(query)
       break
