@@ -8,7 +8,7 @@ import (
 
 var ds DataStore = NewDataStore()
 
-func TestKeys(t *testing.T) {
+func TestKeysCommand(t *testing.T) {
 	defer delete(ds.data, "key1")
 	defer delete(ds.data, "key2")
 
@@ -25,7 +25,7 @@ func TestKeys(t *testing.T) {
 
 }
 
-func TestGet(t *testing.T) {
+func TestGetCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -43,7 +43,7 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestSet(t *testing.T) {
+func TestSetCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -54,7 +54,7 @@ func TestSet(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestIncr(t *testing.T) {
+func TestIncrCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -68,7 +68,7 @@ func TestIncr(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestExists(t *testing.T) {
+func TestExistsCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -86,7 +86,7 @@ func TestExists(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestDelete(t *testing.T) {
+func TestDeleteCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got bool
 	var want bool
@@ -100,7 +100,7 @@ func TestDelete(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestType(t *testing.T) {
+func TestTypeCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -127,7 +127,7 @@ func TestType(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestLpush(t *testing.T) {
+func TestLpushCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -147,7 +147,7 @@ func TestLpush(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestRpush(t *testing.T) {
+func TestRpushCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -167,7 +167,7 @@ func TestRpush(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestLlen(t *testing.T) {
+func TestLlenCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -180,7 +180,7 @@ func TestLlen(t *testing.T) {
   assert.Equal(t, want, got)
 }
 
-func TestLrange(t *testing.T) {
+func TestLrangeCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
@@ -193,7 +193,7 @@ func TestLrange(t *testing.T) {
   assert.Equal(t, want, got)
 }
 
-func TestLtrim(t *testing.T) {
+func TestLtrimCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got types.Data
 	var want types.Data
