@@ -302,3 +302,85 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
 
 	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
 }
+
+func (ds *DataStore) sadd(key, value string) Data {
+  ds.mu.Lock()
+  defer ds.mu.Unlock()
+
+	e, exists := ds.data[key]
+
+	if !exists {
+    e = newEntry(NewKvSet())
+	}
+
+	if e.value.Type() != TSet {
+		return NewKvError(fmt.Sprintf("Cannot use sadd on %v", e.value.Type()))
+	}
+
+	set := e.value.(KvSet)
+	set.Insert(value)
+  ds.data[key] = e
+	return KvString(consts.Ok)
+
+}
+
+func (ds *DataStore) sismember(key, value string) Data {
+  ds.mu.Lock()
+  defer ds.mu.Unlock()
+
+	e, exists := ds.data[key]
+
+	if !exists {
+		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	}
+
+	if e.value.Type() != TSet {
+		return NewKvError(fmt.Sprintf("Cannot use sismember on %v", e.value.Type()))
+	}
+
+	set := e.value.(KvSet)
+
+	if set.Has(value) {
+		return KvInt(1)
+	}
+	return KvInt(0)
+}
+
+func (ds *DataStore) sinter(key, other string) Data {
+  ds.mu.Lock()
+  defer ds.mu.Unlock()
+
+	keyEntry, keyExists := ds.data[key]
+	otherEntry, otherExists := ds.data[other]
+
+	if !(keyExists && otherExists) {
+		return NewKvError(fmt.Sprintf("One of the keys '%v' or '%v' does not exist", key, other))
+	}
+
+	if !(keyEntry.value.Type() == TSet && otherEntry.value.Type() == TSet) {
+		return NewKvError(fmt.Sprintf("Canno perform sinter on '%v' or '%v'", key, other))
+	}
+
+	keySet := keyEntry.value.(KvSet)
+	otherSet := otherEntry.value.(KvSet)
+
+	return KvList(keySet.Intersection(otherSet))
+}
+
+func (ds *DataStore) scard(key string) Data {
+  ds.mu.Lock()
+  defer ds.mu.Unlock()
+
+	e, exists := ds.data[key]
+
+	if !exists {
+		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	}
+
+	if e.value.Type() != TSet {
+		return NewKvError(fmt.Sprintf("Cannot use scard on %v", e.value.Type()))
+	}
+
+	set := e.value.(KvSet)
+	return KvInt(len(set))
+}
