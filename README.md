@@ -6,17 +6,21 @@
 * int
 * string
 * list
+* set
 
-### Supported commands
+## Supported commands
+### Genral
 * get key
 * set key val
-* increment key
 * exists key
-* delete key
-* type key
+* del key
+* dtype key
 * expire key ttl
 * setexp key val ttl
 * ttl key
+### Integers
+* incr key
+### Lists
 * lpush key ...values
 * rpush key ...values
 * llen key
@@ -25,6 +29,11 @@
   - start is swapped with end if end is smaller than start
   - if start is negative it starts from the beginning of the list
   - if end is larger than the length of the list then it is sent to the length of the list
+### Sets
+* sadd key value
+* sismember key value
+* sinter key other_key
+* scard key
 
 <!-- saving is temporarily disabled -->
 <!-- Server dumps data to /tmp/kvdata -->
