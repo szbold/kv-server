@@ -20,6 +20,9 @@
 * ttl key
 ### Integers
 * incr key
+* incrby key increment
+* decr key
+* decrby key decrement
 ### Lists
 * lpush key ...values
 * rpush key ...values

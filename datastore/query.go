@@ -7,7 +7,7 @@ import (
 )
 
 func (ds *DataStore) HandleQuery(query string) []byte {
-	var res Data
+	var res Data = NewIncorrectCommandError(query) // default response is error, which can be later changed
 	q := strings.Split(strings.Trim(query, "\n"), " ")
 
 	switch len(q) {
@@ -22,6 +22,8 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			res = ds.get(q[1])
 		case "incr":
 			res = ds.incr(q[1])
+		case "decr":
+			res = ds.decr(q[1])
 		case "exists":
 			res = ds.exists(q[1])
 		case "del":
@@ -58,6 +60,10 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			res = ds.sismember(q[1], q[2])
 		case "sinter":
 			res = ds.sinter(q[1], q[2])
+    case "incrby":
+      res = ds.incrby(q[1], q[2])
+    case "decrby":
+      res = ds.decrby(q[1], q[2])
 		}
 	case 4:
 		switch q[0] {
@@ -83,7 +89,6 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			res = ds.lpush(q[1], q[2:])
 		case "rpush":
 			res = ds.rpush(q[1], q[2:])
-
 		}
 	}
 

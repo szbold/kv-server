@@ -32,27 +32,68 @@ func (ds *DataStore) get(key string) Data {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if e, exists := ds.data[key]; exists {
+	if e, ok := ds.data[key]; ok {
 		return e.value
 	}
 	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) incr(key string) Data {
+	return ds.incrby(key, "1")
+}
+
+func (ds *DataStore) incrby(key, incrementStr string) Data {
+	increment, err := strconv.Atoi(incrementStr)
+
+	if err != nil {
+		return NewKvError(fmt.Sprint("Increment should be int found string"))
+	}
+
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if e, ok := ds.data[key]; ok {
-		if e.value.Type() == TInt {
-			val := e.value.(KvInt)
-			ds.data[key] = newEntry(val + KvInt(1))
-			return KvString(consts.Ok)
-		}
+	e, ok := ds.data[key]
 
-		return NewKvError(fmt.Sprintf("Cannot run incr on value: %v with type: %v", e.value, e.value.Type()))
+	if !ok {
+		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	if e.value.Type() != TInt {
+		return NewKvError(fmt.Sprintf("Cannot run incrby on value: %v with type: %v", e.value, e.value.Type()))
+	}
+
+	val := e.value.(KvInt)
+	ds.data[key] = newEntry(val + KvInt(increment))
+	return KvString(consts.Ok)
+}
+
+func (ds *DataStore) decr(key string) Data {
+	return ds.decrby(key, "1")
+}
+
+func (ds *DataStore) decrby(key, decrementStr string) Data {
+	decrement, err := strconv.Atoi(decrementStr)
+
+	if err != nil {
+		return NewKvError(fmt.Sprint("Decrement should be int found string"))
+	}
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	e, ok := ds.data[key]
+
+	if !ok {
+		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	}
+
+	if e.value.Type() != TInt {
+		return NewKvError(fmt.Sprintf("Cannot run decrby on value: %v with type: %v", e.value, e.value.Type()))
+	}
+
+	val := e.value.(KvInt)
+	ds.data[key] = newEntry(val - KvInt(decrement))
+	return KvString(consts.Ok)
 }
 
 func (ds *DataStore) exists(key string) KvInt {
@@ -339,7 +380,7 @@ func (ds *DataStore) srem(key, value string) Data {
 
 	set := e.value.(KvSet)
 	set.Delete(value)
-  e.value = set
+	e.value = set
 	ds.data[key] = e
 	return KvString(consts.Ok)
 }
