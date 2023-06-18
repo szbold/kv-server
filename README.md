@@ -31,6 +31,7 @@
   - if end is larger than the length of the list then it is sent to the length of the list
 ### Sets
 * sadd key value
+* srem key value
 * sismember key value
 * sinter key other_key
 * scard key
