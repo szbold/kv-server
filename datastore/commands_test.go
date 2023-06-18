@@ -68,6 +68,48 @@ func TestIncrCommand(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+func TestIncrbyCommand(t *testing.T) {
+	defer delete(ds.data, "key")
+	var got Data
+	var want Data
+
+	ds.data["key"] = newEntry(KvInt(1))
+	ds.incrby("key", "2")
+
+	got = ds.data["key"].value
+	want = KvInt(3)
+
+	assert.Equal(t, want, got)
+}
+
+func TestDecrCommand(t *testing.T) {
+	defer delete(ds.data, "key")
+	var got Data
+	var want Data
+
+	ds.data["key"] = newEntry(KvInt(1))
+	ds.decr("key")
+
+	got = ds.data["key"].value
+	want = KvInt(0)
+
+	assert.Equal(t, want, got)
+}
+
+func TestDecrbyCommand(t *testing.T) {
+	defer delete(ds.data, "key")
+	var got Data
+	var want Data
+
+	ds.data["key"] = newEntry(KvInt(1))
+	ds.decrby("key", "2")
+
+	got = ds.data["key"].value
+	want = KvInt(-1)
+
+	assert.Equal(t, want, got)
+}
+
 func TestExistsCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got Data
