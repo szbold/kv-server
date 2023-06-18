@@ -106,6 +106,13 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 		}
 
     res = ds.sadd(q[1], q[2])
+  case "srem":
+		if len(q) != 3 {
+			res = NewIncorrectCommandError(query)
+      break
+		}
+
+    res = ds.srem(q[1], q[2])
   case "sismember":
 		if len(q) != 3 {
 			res = NewIncorrectCommandError(query)

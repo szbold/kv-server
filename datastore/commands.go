@@ -304,13 +304,13 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
 }
 
 func (ds *DataStore) sadd(key, value string) Data {
-  ds.mu.Lock()
-  defer ds.mu.Unlock()
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
 
 	e, exists := ds.data[key]
 
 	if !exists {
-    e = newEntry(NewKvSet())
+		e = newEntry(NewKvSet())
 	}
 
 	if e.value.Type() != TSet {
@@ -319,14 +319,34 @@ func (ds *DataStore) sadd(key, value string) Data {
 
 	set := e.value.(KvSet)
 	set.Insert(value)
-  ds.data[key] = e
+	ds.data[key] = e
 	return KvString(consts.Ok)
+}
 
+func (ds *DataStore) srem(key, value string) Data {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	e, exists := ds.data[key]
+
+	if !exists {
+		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	}
+
+	if e.value.Type() != TSet {
+		return NewKvError(fmt.Sprintf("Cannot use srem on %v", e.value.Type()))
+	}
+
+	set := e.value.(KvSet)
+	set.Delete(value)
+  e.value = set
+	ds.data[key] = e
+	return KvString(consts.Ok)
 }
 
 func (ds *DataStore) sismember(key, value string) Data {
-  ds.mu.Lock()
-  defer ds.mu.Unlock()
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
 
 	e, exists := ds.data[key]
 
@@ -347,8 +367,8 @@ func (ds *DataStore) sismember(key, value string) Data {
 }
 
 func (ds *DataStore) sinter(key, other string) Data {
-  ds.mu.Lock()
-  defer ds.mu.Unlock()
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
 
 	keyEntry, keyExists := ds.data[key]
 	otherEntry, otherExists := ds.data[other]
@@ -368,8 +388,8 @@ func (ds *DataStore) sinter(key, other string) Data {
 }
 
 func (ds *DataStore) scard(key string) Data {
-  ds.mu.Lock()
-  defer ds.mu.Unlock()
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
 
 	e, exists := ds.data[key]
 

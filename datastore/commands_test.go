@@ -1,10 +1,9 @@
 package datastore
 
 import (
+	"github.com/stretchr/testify/assert"
 	. "key-value-server/datatypes"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var ds DataStore = NewDataStore()
@@ -210,18 +209,33 @@ func TestLtrimCommand(t *testing.T) {
 
 func TestSaddCommand(t *testing.T) {
 	defer delete(ds.data, "key")
-	var got []string
-	var want []string
+	var got KvSet
+	var want KvSet
 
 	ds.sadd("key", "value")
 	ds.sadd("key", "value")
 	ds.sadd("key", "value2")
 
-	for elem := range ds.data["key"].value.(KvSet) {
-		got = append(got, elem)
-	}
+	got = ds.data["key"].value.(KvSet)
 
-	want = []string{"value", "value2"}
+	want = NewKvSet()
+
+	want.Insert("value")
+	want.Insert("value2")
+
+	assert.Equal(t, want, got)
+}
+
+func TestSremCommand(t *testing.T) {
+	defer delete(ds.data, "key")
+	var got KvSet
+	var want KvSet
+
+	ds.sadd("key", "value")
+	ds.srem("key", "value")
+  got = ds.data["key"].value.(KvSet)
+
+	want = NewKvSet()
 
 	assert.Equal(t, want, got)
 }
