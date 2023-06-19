@@ -2,7 +2,6 @@ package datatypes
 
 import (
 	"fmt"
-	"key-value-server/consts"
 	"strconv"
 	"strings"
 )
@@ -10,10 +9,6 @@ import (
 type KvList []string
 
 const TList string = "list"
-
-func (l KvList) String() string {
-	return strings.Join(l, consts.ListDelimiter)
-}
 
 func (l KvList) Type() string {
 	return TList

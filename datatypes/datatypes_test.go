@@ -100,3 +100,4 @@ func TestSetResponse(t *testing.T) {
 		t.Errorf("Want: %v Got: %v", want, got)
 	}
 }
+

@@ -2,7 +2,6 @@ package datatypes
 
 import (
 	"fmt"
-	"key-value-server/consts"
 	"strconv"
 	"strings"
 )
@@ -11,16 +10,6 @@ type void struct{}
 type KvSet map[string]void
 
 const TSet string = "set"
-
-func (s KvSet) String() string {
-	var values []string
-
-	for val := range s {
-		values = append(values, val)
-	}
-
-	return strings.Join(values, consts.ListDelimiter)
-}
 
 func (s KvSet) Type() string {
 	return TSet

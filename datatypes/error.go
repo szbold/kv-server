@@ -12,10 +12,6 @@ type KvError struct {
 
 const TError string = "error"
 
-func (e KvError) String() string {
-	return e.message
-}
-
 func NewKvError(input string) KvError {
   return KvError{message: input}
 }

@@ -59,7 +59,7 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 	}
 
 	if e.value.Type() != TInt {
-		return NewKvError(fmt.Sprintf("Cannot run incrby on value: %v with type: %v", e.value, e.value.Type()))
+		return NewKvError(fmt.Sprintf("Cannot run incrby on: %v", e.value.Type()))
 	}
 
 	val := e.value.(KvInt)
@@ -88,7 +88,7 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 	}
 
 	if e.value.Type() != TInt {
-		return NewKvError(fmt.Sprintf("Cannot run decrby on value: %v with type: %v", e.value, e.value.Type()))
+		return NewKvError(fmt.Sprintf("Cannot run decrby on: %v", e.value.Type()))
 	}
 
 	val := e.value.(KvInt)
