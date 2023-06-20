@@ -8,7 +8,7 @@ import (
 )
 
 func TestInsert(t *testing.T) {
-  var ss SortedSet
+  ss := NewSortedSet(3, 0.5)
 
   ss.Insert("value", 1)
 
@@ -16,4 +16,16 @@ func TestInsert(t *testing.T) {
 
   assert.Equal(t, err, nil)
   assert.Equal(t, WithScore{Value: "value", Score: 1}, val)
+}
+
+func TestDelete(t *testing.T) {
+  ss := NewSortedSet(3, 0.5)
+
+  ss.Insert("value", 1)
+  ss.Delete("value")
+
+  val, err := ss.Get("value")
+
+  assert.NotEqual(t, err, nil)
+  assert.Equal(t, WithScore{}, val)
 }
