@@ -1,13 +1,13 @@
 package datastore
 
 import (
-	. "key-value-server/datatypes"
+	. "kv-server/types"
 	"strconv"
 	"strings"
 )
 
 func (ds *DataStore) HandleQuery(query string) []byte {
-	var res Data = NewIncorrectCommandError(query) // default response is error, which can be later changed
+	var res Data = IncorrectCommandError(query) // default response is error, which can be later changed
 	q := strings.Split(strings.Trim(query, "\n"), " ")
 
 	switch len(q) {
@@ -44,9 +44,9 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			num, err := strconv.Atoi(q[2])
 
 			if err != nil {
-				value = KvString(q[2])
+				value = String(q[2])
 			} else {
-				value = KvInt(num)
+				value = Int(num)
 			}
 
 			res = ds.set(q[1], value)
@@ -64,6 +64,10 @@ func (ds *DataStore) HandleQuery(query string) []byte {
       res = ds.incrby(q[1], q[2])
     case "decrby":
       res = ds.decrby(q[1], q[2])
+    case "zrem":
+      res = ds.zrem(q[1], q[2])
+    case "zrank":
+      res = ds.zrank(q[1], q[2])
 		}
 	case 4:
 		switch q[0] {
@@ -72,9 +76,9 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			num, err := strconv.Atoi(q[2])
 
 			if err != nil {
-				value = KvString(q[2])
+				value = String(q[2])
 			} else {
-				value = KvInt(num)
+				value = Int(num)
 			}
 
 			res = ds.setexp(q[1], value, q[3])
@@ -82,6 +86,10 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			res = ds.lrange(q[1], q[2], q[3])
 		case "ltrim":
 			res = ds.ltrim(q[1], q[2], q[3])
+    case "zadd":
+      res = ds.zadd(q[1], q[2], q[3])
+    case "zrange":
+      res = ds.zrange(q[1], q[2], q[3])
 		}
 	default:
 		switch q[0] {

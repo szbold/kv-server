@@ -38,6 +38,11 @@
 * sismember key value
 * sinter key other_key
 * scard key
+### Sorted sets
+* zadd key value score
+* zrem key value
+* zrank key value
+* zrange key start end
 
 <!-- saving is temporarily disabled -->
 <!-- Server dumps data to /tmp/kvdata -->

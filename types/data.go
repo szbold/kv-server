@@ -1,7 +1,6 @@
-package datatypes
+package types
 
 type Data interface {
-  String() string
   Type() string
   Response() []byte
 }

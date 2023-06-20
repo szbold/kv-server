@@ -1,19 +1,14 @@
 package datastore
 
 import (
-	"key-value-server/consts"
-	"key-value-server/datatypes"
+	. "kv-server/types"
 )
 
 type entry struct {
-	value   datatypes.Data
-	ttlChan chan datatypes.KvInt
+	value   Data
+	ttlChan chan Int
 }
 
-func (e entry) String() string {
-	return e.value.String() + consts.FileDelimiter + e.value.Type()
-}
-
-func newEntry(val datatypes.Data) entry {
+func newEntry(val Data) entry {
 	return entry{val, nil}
 }

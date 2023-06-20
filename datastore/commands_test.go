@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/stretchr/testify/assert"
-	. "key-value-server/datatypes"
+	. "kv-server/types"
 	"testing"
 )
 
@@ -12,14 +12,14 @@ func TestKeysCommand(t *testing.T) {
 	defer delete(ds.data, "key1")
 	defer delete(ds.data, "key2")
 
-	var got KvList
-	var want KvList
+	var got List
+	var want List
 
-	ds.data["key1"] = newEntry(KvString("value1"))
-	ds.data["key2"] = newEntry(KvString("value2"))
+	ds.data["key1"] = newEntry(String("value1"))
+	ds.data["key2"] = newEntry(String("value2"))
 
 	got = ds.keys()
-	want = KvList{"key1", "key2"}
+	want = List{"key1", "key2"}
 
 	assert.Equal(t, want, got)
 
@@ -31,14 +31,14 @@ func TestGetCommand(t *testing.T) {
 	var want Data
 
 	got = ds.get("key")
-	want = NewKvError("Key 'key' does not exist")
+	want = NewError("Key 'key' does not exist")
 
 	assert.Equal(t, want, got)
 
-	ds.data["key"] = newEntry(KvString("value"))
+	ds.data["key"] = newEntry(String("value"))
 
 	got = ds.get("key")
-	want = KvString("value")
+	want = String("value")
 
 	assert.Equal(t, want, got)
 }
@@ -47,9 +47,9 @@ func TestSetCommand(t *testing.T) {
 	defer delete(ds.data, "key")
 	var got Data
 	var want Data
-	ds.set("key", KvString("value"))
+	ds.set("key", String("value"))
 	got = ds.data["key"].value
-	want = KvString("value")
+	want = String("value")
 
 	assert.Equal(t, want, got)
 }
@@ -59,11 +59,11 @@ func TestIncrCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvInt(1))
+	ds.data["key"] = newEntry(Int(1))
 	ds.incr("key")
 
 	got = ds.data["key"].value
-	want = KvInt(2)
+	want = Int(2)
 
 	assert.Equal(t, want, got)
 }
@@ -73,11 +73,11 @@ func TestIncrbyCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvInt(1))
+	ds.data["key"] = newEntry(Int(1))
 	ds.incrby("key", "2")
 
 	got = ds.data["key"].value
-	want = KvInt(3)
+	want = Int(3)
 
 	assert.Equal(t, want, got)
 }
@@ -87,11 +87,11 @@ func TestDecrCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvInt(1))
+	ds.data["key"] = newEntry(Int(1))
 	ds.decr("key")
 
 	got = ds.data["key"].value
-	want = KvInt(0)
+	want = Int(0)
 
 	assert.Equal(t, want, got)
 }
@@ -101,11 +101,11 @@ func TestDecrbyCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvInt(1))
+	ds.data["key"] = newEntry(Int(1))
 	ds.decrby("key", "2")
 
 	got = ds.data["key"].value
-	want = KvInt(-1)
+	want = Int(-1)
 
 	assert.Equal(t, want, got)
 }
@@ -116,14 +116,14 @@ func TestExistsCommand(t *testing.T) {
 	var want Data
 
 	got = ds.exists("key")
-	want = KvInt(0)
+	want = Int(0)
 
 	assert.Equal(t, want, got)
 
-	ds.data["key"] = newEntry(KvInt(1))
+	ds.data["key"] = newEntry(Int(1))
 
 	got = ds.exists("key")
-	want = KvInt(1)
+	want = Int(1)
 
 	assert.Equal(t, want, got)
 }
@@ -133,7 +133,7 @@ func TestDeleteCommand(t *testing.T) {
 	var got bool
 	var want bool
 
-	ds.data["key"] = newEntry(KvInt(1))
+	ds.data["key"] = newEntry(Int(1))
 	ds.del("key")
 
 	_, got = ds.data["key"]
@@ -147,24 +147,24 @@ func TestTypeCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvInt(1))
+	ds.data["key"] = newEntry(Int(1))
 
 	got = ds.dtype("key")
-	want = KvString(TInt)
+	want = String(TInt)
 
 	assert.Equal(t, want, got)
 
-	ds.data["key"] = newEntry(KvString(""))
+	ds.data["key"] = newEntry(String(""))
 
 	got = ds.dtype("key")
-	want = KvString(TString)
+	want = String(TString)
 
 	assert.Equal(t, want, got)
 
-	ds.data["key"] = newEntry(KvList([]string{}))
+	ds.data["key"] = newEntry(List([]string{}))
 
 	got = ds.dtype("key")
-	want = KvString(TList)
+	want = String(TList)
 
 	assert.Equal(t, want, got)
 }
@@ -177,14 +177,14 @@ func TestLpushCommand(t *testing.T) {
 	ds.lpush("key", []string{"1", "12", "123"})
 
 	got = ds.data["key"].value
-	want = KvList{"1", "12", "123"}
+	want = List{"1", "12", "123"}
 
 	assert.Equal(t, want, got)
 
 	ds.lpush("key", []string{"9", "8", "7"})
 
 	got = ds.data["key"].value
-	want = KvList{"9", "8", "7", "1", "12", "123"}
+	want = List{"9", "8", "7", "1", "12", "123"}
 
 	assert.Equal(t, want, got)
 }
@@ -197,14 +197,14 @@ func TestRpushCommand(t *testing.T) {
 	ds.rpush("key", []string{"1", "12", "123"})
 
 	got = ds.data["key"].value
-	want = KvList{"1", "12", "123"}
+	want = List{"1", "12", "123"}
 
 	assert.Equal(t, want, got)
 
 	ds.rpush("key", []string{"9", "8", "7"})
 
 	got = ds.data["key"].value
-	want = KvList{"1", "12", "123", "9", "8", "7"}
+	want = List{"1", "12", "123", "9", "8", "7"}
 
 	assert.Equal(t, want, got)
 }
@@ -214,10 +214,10 @@ func TestLlenCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvList([]string{"1", "2"}))
+	ds.data["key"] = newEntry(List([]string{"1", "2"}))
 
 	got = ds.llen("key")
-	want = KvInt(2)
+	want = Int(2)
 
 	assert.Equal(t, want, got)
 }
@@ -227,10 +227,10 @@ func TestLrangeCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvList([]string{"1", "2", "3", "4"}))
+	ds.data["key"] = newEntry(List([]string{"1", "2", "3", "4"}))
 
 	got = ds.lrange("key", "1", "2")
-	want = KvList{"2", "3"}
+	want = List{"2", "3"}
 
 	assert.Equal(t, want, got)
 }
@@ -240,27 +240,27 @@ func TestLtrimCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(KvList([]string{"1", "2", "3", "4"}))
+	ds.data["key"] = newEntry(List([]string{"1", "2", "3", "4"}))
 
 	ds.ltrim("key", "1", "2")
 	got = ds.data["key"].value
-	want = KvList{"2", "3"}
+	want = List{"2", "3"}
 
 	assert.Equal(t, want, got)
 }
 
 func TestSaddCommand(t *testing.T) {
 	defer delete(ds.data, "key")
-	var got KvSet
-	var want KvSet
+	var got Set
+	var want Set
 
 	ds.sadd("key", "value")
 	ds.sadd("key", "value")
 	ds.sadd("key", "value2")
 
-	got = ds.data["key"].value.(KvSet)
+	got = ds.data["key"].value.(Set)
 
-	want = NewKvSet()
+	want = NewSet()
 
 	want.Insert("value")
 	want.Insert("value2")
@@ -270,14 +270,14 @@ func TestSaddCommand(t *testing.T) {
 
 func TestSremCommand(t *testing.T) {
 	defer delete(ds.data, "key")
-	var got KvSet
-	var want KvSet
+	var got Set
+	var want Set
 
 	ds.sadd("key", "value")
 	ds.srem("key", "value")
-  got = ds.data["key"].value.(KvSet)
+  got = ds.data["key"].value.(Set)
 
-	want = NewKvSet()
+	want = NewSet()
 
 	assert.Equal(t, want, got)
 }
@@ -289,7 +289,7 @@ func TestSismember(t *testing.T) {
 
 	ds.sadd("key", "value")
 	got = ds.sismember("key", "value")
-	want = KvInt(1)
+	want = Int(1)
 
 	assert.Equal(t, want, got)
 }
@@ -306,7 +306,7 @@ func TestSinter(t *testing.T) {
 	ds.sadd("key2", "3")
 
 	got = ds.sinter("key", "key2")
-	want = KvList([]string{"3"})
+	want = List([]string{"3"})
 
 	assert.Equal(t, want, got)
 }
@@ -320,7 +320,7 @@ func TestScard(t *testing.T) {
 	ds.sadd("key", "2")
 
 	got = ds.scard("key")
-	want = KvInt(2)
+	want = Int(2)
 
 	assert.Equal(t, want, got)
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	kvs "key-value-server/server"
+	kvs "kv-server/server"
 )
 
 func main() {
