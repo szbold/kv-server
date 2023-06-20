@@ -46,7 +46,7 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 	increment, err := strconv.Atoi(incrementStr)
 
 	if err != nil {
-		return NewError(fmt.Sprint("Increment should be int found string"))
+		return ParseError("Increment", "int")
 	}
 
 	ds.mu.Lock()
@@ -305,13 +305,13 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return NewError("Start should be a number value")
+		return ParseError("Start", "int")
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return NewError("End should be a number value")
+		return ParseError("End", "int")
 	}
 
 	ds.mu.Lock()
@@ -435,13 +435,121 @@ func (ds *DataStore) scard(key string) Data {
 	e, exists := ds.data[key]
 
 	if !exists {
-		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+		return MissingKeyError(key)
 	}
 
 	if e.value.Type() != TSet {
-		return NewError(fmt.Sprintf("Cannot use scard on %v", e.value.Type()))
+		return IncorrectTypeError("scard", e.value.Type())
 	}
 
 	set := e.value.(Set)
 	return Int(len(set))
+}
+
+func (ds *DataStore) zadd(key, value, scoreStr string) Data {
+	var sset SortedSet
+	score, err := strconv.ParseFloat(scoreStr, 32)
+
+	if err != nil {
+		return ParseError("Score", "float")
+	}
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	e, exists := ds.data[key]
+
+	if !exists {
+		sset = NewSortedSet(consts.SortedSetLevels, consts.SortedSetLevelProbability)
+		sset.Insert(value, float32(score))
+
+		ds.data[key] = newEntry(sset)
+		return String(consts.Ok)
+	}
+
+	if e.value.Type() != TSortedSet {
+		return IncorrectTypeError("zadd", e.value.Type())
+	}
+
+	sset = e.value.(SortedSet)
+	sset.Insert(value, float32(score))
+	e.value = sset
+	ds.data[key] = e
+	return String(consts.Ok)
+}
+
+func (ds *DataStore) zrem(key, value string) Data {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	e, exists := ds.data[key]
+
+	if !exists {
+		return MissingKeyError(key)
+	}
+
+	if e.value.Type() != TSortedSet {
+		return IncorrectTypeError("zadd", e.value.Type())
+	}
+
+	sset := e.value.(SortedSet)
+	sset.Delete(value)
+	e.value = sset
+	ds.data[key] = e
+	return String(consts.Ok)
+}
+
+func (ds *DataStore) zrank(key, value string) Data {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	e, exists := ds.data[key]
+
+	if !exists {
+		return MissingKeyError(key)
+	}
+
+	if e.value.Type() != TSortedSet {
+		return IncorrectTypeError("zadd", e.value.Type())
+	}
+
+	result, err := e.value.(SortedSet).Get(value)
+
+	if err != nil {
+		return NewError(fmt.Sprintf("No member %v in %v", value, key))
+	}
+
+	return Int(result.Score)
+}
+
+func (ds *DataStore) zrange(key, startStr, endStr string) Data {
+	start, err := strconv.Atoi(startStr)
+
+	if err != nil {
+		return ParseError("Start", "int")
+	}
+
+	end, err := strconv.Atoi(endStr)
+
+	if err != nil {
+		return ParseError("End", "int")
+	}
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	e, exists := ds.data[key]
+
+	if !exists {
+		return MissingKeyError(key)
+	}
+
+	if e.value.Type() != TSortedSet {
+		return IncorrectTypeError("zadd", e.value.Type())
+	}
+
+	rangeResults := e.value.(SortedSet).Range(start, end)
+	var results []string
+
+  for i := range rangeResults {
+    results = append(results, rangeResults[i].Value, fmt.Sprintf("%g", rangeResults[i].Score))
+	}
+
+  return List(results)
 }
