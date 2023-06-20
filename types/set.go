@@ -1,4 +1,4 @@
-package datatypes
+package types
 
 import (
 	"fmt"
@@ -7,15 +7,15 @@ import (
 )
 
 type void struct{}
-type KvSet map[string]void
+type Set map[string]void
 
 const TSet string = "set"
 
-func (s KvSet) Type() string {
+func (s Set) Type() string {
 	return TSet
 }
 
-func (s KvSet) Response() []byte {
+func (s Set) Response() []byte {
 	var result []string
 
 	for elem := range s {
@@ -25,27 +25,27 @@ func (s KvSet) Response() []byte {
 	return []byte("*" + strconv.Itoa(len(s)) + "\r\n" + strings.Join(result, ""))
 }
 
-func NewKvSet() KvSet {
+func NewSet() Set {
   return make(map[string]void)
 }
 
 // METHODS FOR SET OPERATIONS
-func (s *KvSet) Insert(value string) {
+func (s *Set) Insert(value string) {
 	if _, ok := (*s)[value]; !ok {
 		(*s)[value] = void{}
 	}
 }
 
-func (s KvSet) Has(value string) bool {
+func (s Set) Has(value string) bool {
 	_, ok := s[value]
 	return ok
 }
 
-func (s *KvSet) Delete(value string) {
+func (s *Set) Delete(value string) {
 	delete(*s, value)
 }
 
-func (s *KvSet) Intersection(other KvSet) []string {
+func (s *Set) Intersection(other Set) []string {
 	var result []string
 	for value := range *s {
 		if other.Has(value) {

@@ -1,4 +1,4 @@
-package datatypes
+package types
 
 type Data interface {
   Type() string

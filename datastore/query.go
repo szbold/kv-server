@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	. "key-value-server/datatypes"
+	. "kv-server/types"
 	"strconv"
 	"strings"
 )
@@ -44,9 +44,9 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			num, err := strconv.Atoi(q[2])
 
 			if err != nil {
-				value = KvString(q[2])
+				value = String(q[2])
 			} else {
-				value = KvInt(num)
+				value = Int(num)
 			}
 
 			res = ds.set(q[1], value)
@@ -72,9 +72,9 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 			num, err := strconv.Atoi(q[2])
 
 			if err != nil {
-				value = KvString(q[2])
+				value = String(q[2])
 			} else {
-				value = KvInt(num)
+				value = Int(num)
 			}
 
 			res = ds.setexp(q[1], value, q[3])

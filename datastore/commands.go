@@ -2,14 +2,14 @@ package datastore
 
 import (
 	"fmt"
-	"key-value-server/consts"
-	. "key-value-server/datatypes"
+	"kv-server/consts"
+	. "kv-server/types"
 	"strconv"
 	"time"
 )
 
-func (ds *DataStore) keys() KvList {
-	var result KvList
+func (ds *DataStore) keys() List {
+	var result List
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -20,12 +20,12 @@ func (ds *DataStore) keys() KvList {
 	return result
 }
 
-func (ds *DataStore) set(key string, value Data) KvString {
+func (ds *DataStore) set(key string, value Data) String {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 	ds.data[key] = newEntry(value)
 
-	return KvString(consts.Ok)
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) get(key string) Data {
@@ -35,7 +35,7 @@ func (ds *DataStore) get(key string) Data {
 	if e, ok := ds.data[key]; ok {
 		return e.value
 	}
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) incr(key string) Data {
@@ -46,7 +46,7 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 	increment, err := strconv.Atoi(incrementStr)
 
 	if err != nil {
-		return NewKvError(fmt.Sprint("Increment should be int found string"))
+		return NewError(fmt.Sprint("Increment should be int found string"))
 	}
 
 	ds.mu.Lock()
@@ -55,16 +55,16 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 	e, ok := ds.data[key]
 
 	if !ok {
-		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
 	if e.value.Type() != TInt {
-		return NewKvError(fmt.Sprintf("Cannot run incrby on: %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot run incrby on: %v", e.value.Type()))
 	}
 
-	val := e.value.(KvInt)
-	ds.data[key] = newEntry(val + KvInt(increment))
-	return KvString(consts.Ok)
+	val := e.value.(Int)
+	ds.data[key] = newEntry(val + Int(increment))
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) decr(key string) Data {
@@ -75,7 +75,7 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 	decrement, err := strconv.Atoi(decrementStr)
 
 	if err != nil {
-		return NewKvError(fmt.Sprint("Decrement should be int found string"))
+		return NewError(fmt.Sprint("Decrement should be int found string"))
 	}
 
 	ds.mu.Lock()
@@ -84,20 +84,20 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 	e, ok := ds.data[key]
 
 	if !ok {
-		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
 	if e.value.Type() != TInt {
-		return NewKvError(fmt.Sprintf("Cannot run decrby on: %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot run decrby on: %v", e.value.Type()))
 	}
 
-	val := e.value.(KvInt)
-	ds.data[key] = newEntry(val - KvInt(decrement))
-	return KvString(consts.Ok)
+	val := e.value.(Int)
+	ds.data[key] = newEntry(val - Int(decrement))
+	return String(consts.Ok)
 }
 
-func (ds *DataStore) exists(key string) KvInt {
-	var exists KvInt = 0
+func (ds *DataStore) exists(key string) Int {
+	var exists Int = 0
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
@@ -116,10 +116,10 @@ func (ds *DataStore) del(key string) Data {
 	if _, ok := ds.data[key]; ok {
 		delete(ds.data, key)
 	} else {
-		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
-	return KvString(consts.Ok)
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) dtype(key string) Data {
@@ -127,44 +127,44 @@ func (ds *DataStore) dtype(key string) Data {
 	defer ds.mu.Unlock()
 
 	if e, ok := ds.data[key]; ok {
-		return KvString(e.value.Type())
+		return String(e.value.Type())
 	}
 
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) expire(key string, ttlStr string) Data {
 	ttl, err := strconv.Atoi(ttlStr)
 
 	if err != nil {
-		return NewKvError(fmt.Sprint("TTL should be int found string"))
+		return NewError(fmt.Sprint("TTL should be int found string"))
 	}
 
 	if ttl < 1 {
-		return NewKvError(fmt.Sprint("TTL should be at least 1"))
+		return NewError(fmt.Sprint("TTL should be at least 1"))
 	}
 
 	ds.mu.Lock()
 
 	if e, ok := ds.data[key]; ok {
-		ch := make(chan KvInt, 1)
+		ch := make(chan Int, 1)
 		e.ttlChan = ch
 		ds.data[key] = e
 		ds.mu.Unlock()
 
 		go ds.emitTtl(key, ttl)
 
-		return KvString(consts.Ok)
+		return String(consts.Ok)
 	}
 
 	ds.mu.Unlock()
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) emitTtl(key string, ttl int) {
 	e, _ := ds.data[key]
 	defer close(e.ttlChan)
-	e.ttlChan <- KvInt(ttl)
+	e.ttlChan <- Int(ttl)
 
 	for {
 		go func() {
@@ -173,7 +173,7 @@ func (ds *DataStore) emitTtl(key string, ttl int) {
 			}
 		}()
 
-		e.ttlChan <- KvInt(ttl)
+		e.ttlChan <- Int(ttl)
 
 		time.Sleep(time.Second)
 		ttl--
@@ -195,82 +195,82 @@ func (ds *DataStore) ttl(key string) Data {
 		return <-ds.data[key].ttlChan
 	}
 
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) lpush(key string, values []string) Data {
-	var list KvList
+	var list List
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, ok := ds.data[key]; ok {
 		if e.value.Type() == TList {
-			list = e.value.(KvList)
+			list = e.value.(List)
 			list = append(values, list...)
 			e.value = list
 			ds.data[key] = e
 		} else {
-			return NewKvError(fmt.Sprintf("Cannot lpush on type %v", e.value.Type()))
+			return NewError(fmt.Sprintf("Cannot lpush on type %v", e.value.Type()))
 		}
 	} else {
-		ds.data[key] = newEntry(KvList(values))
+		ds.data[key] = newEntry(List(values))
 	}
 
-	return KvString(consts.Ok)
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) rpush(key string, values []string) Data {
-	var list KvList
+	var list List
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, ok := ds.data[key]; ok {
 		if e.value.Type() == TList {
-			list = e.value.(KvList)
+			list = e.value.(List)
 			list = append(list, values...)
 			e.value = list
 			ds.data[key] = e
 		} else {
-			return NewKvError(fmt.Sprintf("Cannot rpush on type %v", e.value.Type()))
+			return NewError(fmt.Sprintf("Cannot rpush on type %v", e.value.Type()))
 		}
 	} else {
-		ds.data[key] = newEntry(KvList(values))
+		ds.data[key] = newEntry(List(values))
 	}
 
-	return KvString(consts.Ok)
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) llen(key string) Data {
-	var list KvList
+	var list List
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if e, exists := ds.data[key]; exists {
 		if e.value.Type() == TList {
-			list = e.value.(KvList)
-			return KvInt(len(list))
+			list = e.value.(List)
+			return Int(len(list))
 		}
 
-		return NewKvError(fmt.Sprintf("Value of type %v does not have property length", e.value.Type()))
+		return NewError(fmt.Sprintf("Value of type %v does not have property length", e.value.Type()))
 	}
 
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) lrange(key, startStr, endStr string) Data {
-	var list KvList
+	var list List
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return NewKvError("Start should be a number value")
+		return NewError("Start should be a number value")
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return NewKvError("End should be a number value")
+		return NewError("End should be a number value")
 	}
 
 	ds.mu.Lock()
@@ -278,7 +278,7 @@ func (ds *DataStore) lrange(key, startStr, endStr string) Data {
 
 	if e, exists := ds.data[key]; exists {
 		if e.value.Type() == TList {
-			list = e.value.(KvList)
+			list = e.value.(List)
 			if start > end {
 				start, end = end, start
 			}
@@ -294,24 +294,24 @@ func (ds *DataStore) lrange(key, startStr, endStr string) Data {
 			return list[start : end+1]
 		}
 
-		return NewKvError(fmt.Sprintf("Cannot use lrange on %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot use lrange on %v", e.value.Type()))
 	}
 
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
-	var list KvList
+	var list List
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return NewKvError("Start should be a number value")
+		return NewError("Start should be a number value")
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return NewKvError("End should be a number value")
+		return NewError("End should be a number value")
 	}
 
 	ds.mu.Lock()
@@ -319,7 +319,7 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
 
 	if e, exists := ds.data[key]; exists {
 		if e.value.Type() == TList {
-			list = e.value.(KvList)
+			list = e.value.(List)
 			if start > end {
 				start, end = end, start
 			}
@@ -335,13 +335,13 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
 			e.value = list[start : end+1]
 			ds.data[key] = e
 
-			return KvString(consts.Ok)
+			return String(consts.Ok)
 		}
 
-		return NewKvError(fmt.Sprintf("Cannot use ltrim on %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot use ltrim on %v", e.value.Type()))
 	}
 
-	return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 }
 
 func (ds *DataStore) sadd(key, value string) Data {
@@ -351,17 +351,17 @@ func (ds *DataStore) sadd(key, value string) Data {
 	e, exists := ds.data[key]
 
 	if !exists {
-		e = newEntry(NewKvSet())
+		e = newEntry(NewSet())
 	}
 
 	if e.value.Type() != TSet {
-		return NewKvError(fmt.Sprintf("Cannot use sadd on %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot use sadd on %v", e.value.Type()))
 	}
 
-	set := e.value.(KvSet)
+	set := e.value.(Set)
 	set.Insert(value)
 	ds.data[key] = e
-	return KvString(consts.Ok)
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) srem(key, value string) Data {
@@ -371,18 +371,18 @@ func (ds *DataStore) srem(key, value string) Data {
 	e, exists := ds.data[key]
 
 	if !exists {
-		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
 	if e.value.Type() != TSet {
-		return NewKvError(fmt.Sprintf("Cannot use srem on %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot use srem on %v", e.value.Type()))
 	}
 
-	set := e.value.(KvSet)
+	set := e.value.(Set)
 	set.Delete(value)
 	e.value = set
 	ds.data[key] = e
-	return KvString(consts.Ok)
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) sismember(key, value string) Data {
@@ -392,19 +392,19 @@ func (ds *DataStore) sismember(key, value string) Data {
 	e, exists := ds.data[key]
 
 	if !exists {
-		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
 	if e.value.Type() != TSet {
-		return NewKvError(fmt.Sprintf("Cannot use sismember on %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot use sismember on %v", e.value.Type()))
 	}
 
-	set := e.value.(KvSet)
+	set := e.value.(Set)
 
 	if set.Has(value) {
-		return KvInt(1)
+		return Int(1)
 	}
-	return KvInt(0)
+	return Int(0)
 }
 
 func (ds *DataStore) sinter(key, other string) Data {
@@ -415,17 +415,17 @@ func (ds *DataStore) sinter(key, other string) Data {
 	otherEntry, otherExists := ds.data[other]
 
 	if !(keyExists && otherExists) {
-		return NewKvError(fmt.Sprintf("One of the keys '%v' or '%v' does not exist", key, other))
+		return NewError(fmt.Sprintf("One of the keys '%v' or '%v' does not exist", key, other))
 	}
 
 	if !(keyEntry.value.Type() == TSet && otherEntry.value.Type() == TSet) {
-		return NewKvError(fmt.Sprintf("Canno perform sinter on '%v' or '%v'", key, other))
+		return NewError(fmt.Sprintf("Canno perform sinter on '%v' or '%v'", key, other))
 	}
 
-	keySet := keyEntry.value.(KvSet)
-	otherSet := otherEntry.value.(KvSet)
+	keySet := keyEntry.value.(Set)
+	otherSet := otherEntry.value.(Set)
 
-	return KvList(keySet.Intersection(otherSet))
+	return List(keySet.Intersection(otherSet))
 }
 
 func (ds *DataStore) scard(key string) Data {
@@ -435,13 +435,13 @@ func (ds *DataStore) scard(key string) Data {
 	e, exists := ds.data[key]
 
 	if !exists {
-		return NewKvError(fmt.Sprintf("Key '%v' does not exist", key))
+		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
 	if e.value.Type() != TSet {
-		return NewKvError(fmt.Sprintf("Cannot use scard on %v", e.value.Type()))
+		return NewError(fmt.Sprintf("Cannot use scard on %v", e.value.Type()))
 	}
 
-	set := e.value.(KvSet)
-	return KvInt(len(set))
+	set := e.value.(Set)
+	return Int(len(set))
 }

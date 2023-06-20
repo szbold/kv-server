@@ -1,6 +1,8 @@
-package datatypes
+package types
 
 import (
+	"errors"
+	"fmt"
 	"math/rand"
 	"strings"
 )
@@ -14,8 +16,8 @@ type node struct {
 }
 
 type WithScore struct {
-	value string
-	score float32
+	Value string
+	Score float32
 }
 
 func newNode(value string, score float32, level int) *node {
@@ -33,7 +35,7 @@ type skipList struct {
 	head             *node
 }
 
-func NewskipList(maxLevel int, levelProbability float32) skipList {
+func newSkipList(maxLevel int, levelProbability float32) skipList {
 	return skipList{
 		maxLevel,
 		levelProbability,
@@ -138,33 +140,90 @@ func (s skipList) RangeWithScores(start, end int) []WithScore {
 	return result
 }
 
-type KvSortedSet struct {
+func (s *skipList) delete(n *node) {
+	if n == s.head {
+		s.head = s.head.forward[0]
+		return
+	}
+
+	current := s.head
+	update := make([]*node, s.maxLevel+1)
+
+	for i := s.level; i >= 0; i-- {
+		for current.forward[i] != nil && current.forward[i] != n {
+			current = current.forward[i]
+		}
+
+		update[i] = current
+	}
+
+	current = current.forward[0]
+
+	if current == n {
+		for i := 0; i <= s.level; i++ {
+			if update[i].forward[i] != current {
+				break
+			}
+
+			update[i].forward[i] = current.forward[i]
+		}
+
+		for s.level > 0 && s.head.forward[s.level] == nil {
+			s.level--
+		}
+	}
+}
+
+type SortedSet struct {
 	hMap  map[string]*node
 	sList skipList
 }
 
-func (ss KvSortedSet) Insert(value string, score float32) {
-	_, exists := ss.hMap[value]
+func NewSortedSet(levels int, levelProbability float32) SortedSet {
+  return SortedSet{make(map[string]*node), newSkipList(levels, levelProbability)}
+}
 
-	if !exists {
-		// TODO delete old node
+func (ss *SortedSet) Insert(value string, score float32) {
+	oldNode, exists := ss.hMap[value]
+
+	if exists {
+		ss.sList.delete(oldNode)
 	}
 
-	n := ss.sList.insert(value, score)
-	ss.hMap[value] = n
+	newNode := ss.sList.insert(value, score)
+	ss.hMap[value] = newNode
 }
 
 // TODO get this done
-func (ss KvSortedSet) Delete(value string) {}
-func (ss KvSortedSet) Get(value string) {}
-func (ss KvSortedSet) Range(start, end int) {}
-func (ss KvSortedSet) RangeWithScores(start, end int) {}
+func (ss *SortedSet) Delete(value string) {
+	n, exists := ss.hMap[value]
 
-func (ss KvSortedSet) Type() string {
+	if exists {
+		ss.sList.delete(n)
+	}
+
+	delete(ss.hMap, value)
+}
+
+func (ss SortedSet) Get(value string) (WithScore, error) {
+	n, exists := ss.hMap[value]
+
+	if !exists {
+		return WithScore{}, errors.New(fmt.Sprintf("No entry with name %v", value))
+	}
+
+	return WithScore{n.value, n.score}, nil
+}
+
+func (ss SortedSet) Range(start, end int) []WithScore {
+  return ss.sList.RangeWithScores(start, end)
+}
+
+func (ss SortedSet) Type() string {
 	return TSortedSet
 }
 
-// TODO get this working if needed
-func (ss KvSortedSet) Response() []byte {
-  return []byte("")
+// this function will never be used since a raw sorted set is never returned
+func (ss SortedSet) Response() []byte {
+	return []byte("")
 }

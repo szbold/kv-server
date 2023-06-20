@@ -1,18 +1,18 @@
-package datatypes
+package types
 
 import (
 	"fmt"
 	"strconv"
 )
 
-type KvInt int
+type Int int
 
 const TInt string = "int"
 
-func (i KvInt) Type() string {
+func (i Int) Type() string {
 	return TInt
 }
 
-func (i KvInt) Response() []byte {
+func (i Int) Response() []byte {
 	return []byte(fmt.Sprintf(":%v\r\n", strconv.Itoa(int(i))))
 }

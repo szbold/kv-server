@@ -1,4 +1,4 @@
-package datatypes
+package types
 
 import (
 	"fmt"
@@ -6,15 +6,15 @@ import (
 	"strings"
 )
 
-type KvList []string
+type List []string
 
 const TList string = "list"
 
-func (l KvList) Type() string {
+func (l List) Type() string {
 	return TList
 }
 
-func (l KvList) Response() []byte {
+func (l List) Response() []byte {
 	var result []string
 
 	for _, elem := range l {

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"key-value-server/datastore"
+	"kv-server/datastore"
 	"log"
 	"net"
 	"os"
