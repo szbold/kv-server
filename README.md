@@ -7,6 +7,7 @@
 * string
 * list
 * set
+* sorted set
 
 ## Supported commands
 ### Genral
