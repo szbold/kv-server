@@ -3,7 +3,7 @@
 ## Data transfered over tcp with REDIS protocol
 
 ## Supported types
-* int
+* number (stored as float32, but some operations prevent floats from being written)
 * string
 * list
 * set
