@@ -16,8 +16,8 @@ func TestStringResponse(t *testing.T) {
 
 }
 
-func TestIntResponse(t *testing.T) {
-	var s Int
+func TestNumberResponse(t *testing.T) {
+	var s Number
 	s = 123
 	got := s.Response()
 	want := []byte(":123\r\n")

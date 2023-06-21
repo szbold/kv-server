@@ -2,17 +2,16 @@ package types
 
 import (
 	"fmt"
-	"strconv"
 )
 
-type Int int
+type Number float32
 
-const TInt string = "int"
+const TNumber = "number"
 
-func (i Int) Type() string {
-	return TInt
+func (i Number) Type() string {
+	return TNumber
 }
 
-func (i Int) Response() []byte {
-	return []byte(fmt.Sprintf(":%v\r\n", strconv.Itoa(int(i))))
+func (i Number) Response() []byte {
+	return []byte(fmt.Sprintf(":%v\r\n", fmt.Sprintf("%g", i)))
 }

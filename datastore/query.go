@@ -41,12 +41,12 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 		switch q[0] {
 		case "set":
 			var value Data
-			num, err := strconv.Atoi(q[2])
+			num, err := strconv.ParseFloat(q[2], 32)
 
 			if err != nil {
 				value = String(q[2])
 			} else {
-				value = Int(num)
+				value = Number(num)
 			}
 
 			res = ds.set(q[1], value)
@@ -73,12 +73,12 @@ func (ds *DataStore) HandleQuery(query string) []byte {
 		switch q[0] {
 		case "setexp":
 			var value Data
-			num, err := strconv.Atoi(q[2])
+			num, err := strconv.ParseFloat(q[2], 32)
 
 			if err != nil {
 				value = String(q[2])
 			} else {
-				value = Int(num)
+				value = Number(num)
 			}
 
 			res = ds.setexp(q[1], value, q[3])

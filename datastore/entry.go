@@ -6,7 +6,7 @@ import (
 
 type entry struct {
 	value   Data
-	ttlChan chan Int
+	ttlChan chan Number
 }
 
 func newEntry(val Data) entry {

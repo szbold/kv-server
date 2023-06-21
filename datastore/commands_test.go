@@ -59,11 +59,11 @@ func TestIncrCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(Int(1))
+	ds.data["key"] = newEntry(Number(1))
 	ds.incr("key")
 
 	got = ds.data["key"].value
-	want = Int(2)
+	want = Number(2)
 
 	assert.Equal(t, want, got)
 }
@@ -73,11 +73,11 @@ func TestIncrbyCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(Int(1))
+	ds.data["key"] = newEntry(Number(1))
 	ds.incrby("key", "2")
 
 	got = ds.data["key"].value
-	want = Int(3)
+	want = Number(3)
 
 	assert.Equal(t, want, got)
 }
@@ -87,11 +87,11 @@ func TestDecrCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(Int(1))
+	ds.data["key"] = newEntry(Number(1))
 	ds.decr("key")
 
 	got = ds.data["key"].value
-	want = Int(0)
+	want = Number(0)
 
 	assert.Equal(t, want, got)
 }
@@ -101,11 +101,11 @@ func TestDecrbyCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(Int(1))
+	ds.data["key"] = newEntry(Number(1))
 	ds.decrby("key", "2")
 
 	got = ds.data["key"].value
-	want = Int(-1)
+	want = Number(-1)
 
 	assert.Equal(t, want, got)
 }
@@ -116,14 +116,14 @@ func TestExistsCommand(t *testing.T) {
 	var want Data
 
 	got = ds.exists("key")
-	want = Int(0)
+	want = Number(0)
 
 	assert.Equal(t, want, got)
 
-	ds.data["key"] = newEntry(Int(1))
+	ds.data["key"] = newEntry(Number(1))
 
 	got = ds.exists("key")
-	want = Int(1)
+	want = Number(1)
 
 	assert.Equal(t, want, got)
 }
@@ -133,7 +133,7 @@ func TestDeleteCommand(t *testing.T) {
 	var got bool
 	var want bool
 
-	ds.data["key"] = newEntry(Int(1))
+	ds.data["key"] = newEntry(Number(1))
 	ds.del("key")
 
 	_, got = ds.data["key"]
@@ -147,10 +147,10 @@ func TestTypeCommand(t *testing.T) {
 	var got Data
 	var want Data
 
-	ds.data["key"] = newEntry(Int(1))
+	ds.data["key"] = newEntry(Number(1))
 
 	got = ds.dtype("key")
-	want = String(TInt)
+	want = String(TNumber)
 
 	assert.Equal(t, want, got)
 
@@ -217,7 +217,7 @@ func TestLlenCommand(t *testing.T) {
 	ds.data["key"] = newEntry(List([]string{"1", "2"}))
 
 	got = ds.llen("key")
-	want = Int(2)
+	want = Number(2)
 
 	assert.Equal(t, want, got)
 }
@@ -289,7 +289,7 @@ func TestSismember(t *testing.T) {
 
 	ds.sadd("key", "value")
 	got = ds.sismember("key", "value")
-	want = Int(1)
+	want = Number(1)
 
 	assert.Equal(t, want, got)
 }
@@ -320,7 +320,7 @@ func TestScard(t *testing.T) {
 	ds.sadd("key", "2")
 
 	got = ds.scard("key")
-	want = Int(2)
+	want = Number(2)
 
 	assert.Equal(t, want, got)
 }

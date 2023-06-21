@@ -58,12 +58,12 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
-	if e.value.Type() != TInt {
+	if e.value.Type() != TNumber {
 		return NewError(fmt.Sprintf("Cannot run incrby on: %v", e.value.Type()))
 	}
 
-	val := e.value.(Int)
-	ds.data[key] = newEntry(val + Int(increment))
+	val := e.value.(Number)
+	ds.data[key] = newEntry(val + Number(increment))
 	return String(consts.Ok)
 }
 
@@ -87,17 +87,17 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
 	}
 
-	if e.value.Type() != TInt {
+	if e.value.Type() != TNumber {
 		return NewError(fmt.Sprintf("Cannot run decrby on: %v", e.value.Type()))
 	}
 
-	val := e.value.(Int)
-	ds.data[key] = newEntry(val - Int(decrement))
+	val := e.value.(Number)
+	ds.data[key] = newEntry(val - Number(decrement))
 	return String(consts.Ok)
 }
 
-func (ds *DataStore) exists(key string) Int {
-	var exists Int = 0
+func (ds *DataStore) exists(key string) Number {
+	var exists Number = 0
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
@@ -147,7 +147,7 @@ func (ds *DataStore) expire(key string, ttlStr string) Data {
 	ds.mu.Lock()
 
 	if e, ok := ds.data[key]; ok {
-		ch := make(chan Int, 1)
+		ch := make(chan Number, 1)
 		e.ttlChan = ch
 		ds.data[key] = e
 		ds.mu.Unlock()
@@ -164,7 +164,7 @@ func (ds *DataStore) expire(key string, ttlStr string) Data {
 func (ds *DataStore) emitTtl(key string, ttl int) {
 	e, _ := ds.data[key]
 	defer close(e.ttlChan)
-	e.ttlChan <- Int(ttl)
+	e.ttlChan <- Number(ttl)
 
 	for {
 		go func() {
@@ -173,7 +173,7 @@ func (ds *DataStore) emitTtl(key string, ttl int) {
 			}
 		}()
 
-		e.ttlChan <- Int(ttl)
+		e.ttlChan <- Number(ttl)
 
 		time.Sleep(time.Second)
 		ttl--
@@ -250,7 +250,7 @@ func (ds *DataStore) llen(key string) Data {
 	if e, exists := ds.data[key]; exists {
 		if e.value.Type() == TList {
 			list = e.value.(List)
-			return Int(len(list))
+			return Number(len(list))
 		}
 
 		return NewError(fmt.Sprintf("Value of type %v does not have property length", e.value.Type()))
@@ -402,9 +402,9 @@ func (ds *DataStore) sismember(key, value string) Data {
 	set := e.value.(Set)
 
 	if set.Has(value) {
-		return Int(1)
+		return Number(1)
 	}
-	return Int(0)
+	return Number(0)
 }
 
 func (ds *DataStore) sinter(key, other string) Data {
@@ -443,7 +443,7 @@ func (ds *DataStore) scard(key string) Data {
 	}
 
 	set := e.value.(Set)
-	return Int(len(set))
+	return Number(len(set))
 }
 
 func (ds *DataStore) zadd(key, value, scoreStr string) Data {
@@ -516,7 +516,7 @@ func (ds *DataStore) zrank(key, value string) Data {
 		return NewError(fmt.Sprintf("No member %v in %v", value, key))
 	}
 
-	return Int(result.Score)
+	return Number(result.Score)
 }
 
 func (ds *DataStore) zrange(key, startStr, endStr string) Data {
