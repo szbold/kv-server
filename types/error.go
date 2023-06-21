@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"kv-server/consts"
 	"strconv"
+	"strings"
 )
 
 type Error struct {
@@ -25,11 +26,11 @@ func MissingKeyError(key string) Error {
 
 }
 func IncorrectTypeError(command, datatype string) Error {
-	return NewError(fmt.Sprintf("Cannot use %v on %v", command, datatype))
+	return NewError(fmt.Sprintf("Cannot use %v on %v", strings.ToUpper(command), strings.ToUpper(datatype)))
 }
 
-func ParseError(field, tWant string) Error {
-	return NewError(fmt.Sprintf("%v should be %v found string", field, tWant))
+func ParseError(field, wantedType string) Error {
+	return NewError(fmt.Sprintf("%v should be %v found string", strings.ToUpper(field), strings.ToUpper(wantedType)))
 }
 
 func (e Error) Type() string {

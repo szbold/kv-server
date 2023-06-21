@@ -35,7 +35,8 @@ func (ds *DataStore) get(key string) Data {
 	if e, ok := ds.data[key]; ok {
 		return e.value
 	}
-	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+
+  return MissingKeyError(key)
 }
 
 func (ds *DataStore) incr(key string) Data {
@@ -55,11 +56,11 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 	e, ok := ds.data[key]
 
 	if !ok {
-		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+    return MissingKeyError(key)
 	}
 
 	if e.value.Type() != TNumber {
-		return NewError(fmt.Sprintf("Cannot run incrby on: %v", e.value.Type()))
+    return IncorrectTypeError("incrby", e.value.Type())
 	}
 
 	val := e.value.(Number)
@@ -75,7 +76,7 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 	decrement, err := strconv.Atoi(decrementStr)
 
 	if err != nil {
-		return NewError(fmt.Sprint("Decrement should be int found string"))
+    return ParseError("decrement", "number")
 	}
 
 	ds.mu.Lock()
@@ -84,11 +85,11 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 	e, ok := ds.data[key]
 
 	if !ok {
-		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+    return MissingKeyError(key)
 	}
 
 	if e.value.Type() != TNumber {
-		return NewError(fmt.Sprintf("Cannot run decrby on: %v", e.value.Type()))
+    return IncorrectTypeError("decrby", e.value.Type())
 	}
 
 	val := e.value.(Number)
@@ -116,7 +117,7 @@ func (ds *DataStore) del(key string) Data {
 	if _, ok := ds.data[key]; ok {
 		delete(ds.data, key)
 	} else {
-		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+		return MissingKeyError(key)
 	}
 
 	return String(consts.Ok)
@@ -130,14 +131,14 @@ func (ds *DataStore) dtype(key string) Data {
 		return String(e.value.Type())
 	}
 
-	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+	return MissingKeyError(key)
 }
 
 func (ds *DataStore) expire(key string, ttlStr string) Data {
 	ttl, err := strconv.Atoi(ttlStr)
 
 	if err != nil {
-		return NewError(fmt.Sprint("TTL should be int found string"))
+		return ParseError("ttl", "int")
 	}
 
 	if ttl < 1 {
@@ -145,20 +146,21 @@ func (ds *DataStore) expire(key string, ttlStr string) Data {
 	}
 
 	ds.mu.Lock()
+  defer ds.mu.Unlock()
 
-	if e, ok := ds.data[key]; ok {
-		ch := make(chan Number, 1)
-		e.ttlChan = ch
-		ds.data[key] = e
-		ds.mu.Unlock()
+	e, exists := ds.data[key]
 
-		go ds.emitTtl(key, ttl)
-
-		return String(consts.Ok)
+	if !exists {
+		return MissingKeyError(key)
 	}
 
-	ds.mu.Unlock()
-	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+	ch := make(chan Number, 1)
+	e.ttlChan = ch
+	ds.data[key] = e
+
+	go ds.emitTtl(key, ttl)
+
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) emitTtl(key string, ttl int) {
@@ -195,27 +197,28 @@ func (ds *DataStore) ttl(key string) Data {
 		return <-ds.data[key].ttlChan
 	}
 
-	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+	return MissingKeyError(key)
 }
 
 func (ds *DataStore) lpush(key string, values []string) Data {
-	var list List
-
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if e, ok := ds.data[key]; ok {
-		if e.value.Type() == TList {
-			list = e.value.(List)
-			list = append(values, list...)
-			e.value = list
-			ds.data[key] = e
-		} else {
-			return NewError(fmt.Sprintf("Cannot lpush on type %v", e.value.Type()))
-		}
-	} else {
+	e, exists := ds.data[key]
+
+	if !exists {
 		ds.data[key] = newEntry(List(values))
+		return String(consts.Ok)
 	}
+
+	if e.value.Type() != TList {
+		return IncorrectTypeError("lpush", e.value.Type())
+	}
+
+	list := e.value.(List)
+	list = append(values, list...)
+	e.value = list
+	ds.data[key] = e
 
 	return String(consts.Ok)
 }
@@ -225,38 +228,41 @@ func (ds *DataStore) rpush(key string, values []string) Data {
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
+	e, exists := ds.data[key]
 
-	if e, ok := ds.data[key]; ok {
-		if e.value.Type() == TList {
-			list = e.value.(List)
-			list = append(list, values...)
-			e.value = list
-			ds.data[key] = e
-		} else {
-			return NewError(fmt.Sprintf("Cannot rpush on type %v", e.value.Type()))
-		}
-	} else {
+	if !exists {
 		ds.data[key] = newEntry(List(values))
+		return String(consts.Ok)
 	}
+
+	if e.value.Type() != TList {
+		return IncorrectTypeError("rpush", e.value.Type())
+	}
+
+	list = e.value.(List)
+	list = append(list, values...)
+	e.value = list
+	ds.data[key] = e
 
 	return String(consts.Ok)
 }
 
 func (ds *DataStore) llen(key string) Data {
-	var list List
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if e, exists := ds.data[key]; exists {
-		if e.value.Type() == TList {
-			list = e.value.(List)
-			return Number(len(list))
-		}
+	e, exists := ds.data[key]
 
-		return NewError(fmt.Sprintf("Value of type %v does not have property length", e.value.Type()))
+	if !exists {
+		return MissingKeyError(key)
 	}
 
-	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+	if e.value.Type() != TList {
+		return IncorrectTypeError("llen", e.value.Type())
+	}
+
+	list := e.value.(List)
+	return Number(len(list))
 }
 
 func (ds *DataStore) lrange(key, startStr, endStr string) Data {
@@ -264,40 +270,42 @@ func (ds *DataStore) lrange(key, startStr, endStr string) Data {
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return NewError("Start should be a number value")
+		return ParseError("Start", "int")
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return NewError("End should be a number value")
+		return ParseError("End", "int")
 	}
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if e, exists := ds.data[key]; exists {
-		if e.value.Type() == TList {
-			list = e.value.(List)
-			if start > end {
-				start, end = end, start
-			}
+	e, exists := ds.data[key]
 
-			if start < 0 {
-				start = 0
-			}
-
-			if end > len(list)-1 {
-				end = len(list) - 1
-			}
-
-			return list[start : end+1]
-		}
-
-		return NewError(fmt.Sprintf("Cannot use lrange on %v", e.value.Type()))
+	if !exists {
+		return MissingKeyError(key)
 	}
 
-	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+	if e.value.Type() != TList {
+		return IncorrectTypeError("lrange", e.value.Type())
+	}
+
+	list = e.value.(List)
+	if start > end {
+		start, end = end, start
+	}
+
+	if start < 0 {
+		start = 0
+	}
+
+	if end > len(list)-1 {
+		end = len(list) - 1
+	}
+
+	return list[start : end+1]
 }
 
 func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
@@ -317,31 +325,33 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if e, exists := ds.data[key]; exists {
-		if e.value.Type() == TList {
-			list = e.value.(List)
-			if start > end {
-				start, end = end, start
-			}
+	e, exists := ds.data[key]
 
-			if start < 0 {
-				start = 0
-			}
-
-			if end > len(list)-1 {
-				end = len(list) - 1
-			}
-
-			e.value = list[start : end+1]
-			ds.data[key] = e
-
-			return String(consts.Ok)
-		}
-
-		return NewError(fmt.Sprintf("Cannot use ltrim on %v", e.value.Type()))
+	if !exists {
+		return MissingKeyError(key)
 	}
 
-	return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+	if e.value.Type() != TList {
+		return IncorrectTypeError("ltrim", e.value.Type())
+	}
+
+	list = e.value.(List)
+	if start > end {
+		start, end = end, start
+	}
+
+	if start < 0 {
+		start = 0
+	}
+
+	if end > len(list)-1 {
+		end = len(list) - 1
+	}
+
+	e.value = list[start : end+1]
+	ds.data[key] = e
+
+	return String(consts.Ok)
 }
 
 func (ds *DataStore) sadd(key, value string) Data {
@@ -355,7 +365,7 @@ func (ds *DataStore) sadd(key, value string) Data {
 	}
 
 	if e.value.Type() != TSet {
-		return NewError(fmt.Sprintf("Cannot use sadd on %v", e.value.Type()))
+		return IncorrectTypeError("sadd", e.value.Type())
 	}
 
 	set := e.value.(Set)
@@ -371,11 +381,11 @@ func (ds *DataStore) srem(key, value string) Data {
 	e, exists := ds.data[key]
 
 	if !exists {
-		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+		return MissingKeyError(key)
 	}
 
 	if e.value.Type() != TSet {
-		return NewError(fmt.Sprintf("Cannot use srem on %v", e.value.Type()))
+		return IncorrectTypeError("srem", e.value.Type())
 	}
 
 	set := e.value.(Set)
@@ -392,11 +402,11 @@ func (ds *DataStore) sismember(key, value string) Data {
 	e, exists := ds.data[key]
 
 	if !exists {
-		return NewError(fmt.Sprintf("Key '%v' does not exist", key))
+		return MissingKeyError(key)
 	}
 
 	if e.value.Type() != TSet {
-		return NewError(fmt.Sprintf("Cannot use sismember on %v", e.value.Type()))
+		return IncorrectTypeError("sismember", e.value.Type())
 	}
 
 	set := e.value.(Set)
@@ -414,12 +424,20 @@ func (ds *DataStore) sinter(key, other string) Data {
 	keyEntry, keyExists := ds.data[key]
 	otherEntry, otherExists := ds.data[other]
 
-	if !(keyExists && otherExists) {
-		return NewError(fmt.Sprintf("One of the keys '%v' or '%v' does not exist", key, other))
+	if !keyExists {
+		return MissingKeyError(key)
 	}
 
-	if !(keyEntry.value.Type() == TSet && otherEntry.value.Type() == TSet) {
-		return NewError(fmt.Sprintf("Canno perform sinter on '%v' or '%v'", key, other))
+	if !otherExists {
+		return MissingKeyError(other)
+	}
+
+	if keyEntry.value.Type() != TSet {
+		return IncorrectTypeError("sinter", keyEntry.value.Type())
+	}
+
+	if otherEntry.value.Type() != TSet {
+		return IncorrectTypeError("sinter", otherEntry.value.Type())
 	}
 
 	keySet := keyEntry.value.(Set)
@@ -523,13 +541,13 @@ func (ds *DataStore) zrange(key, startStr, endStr string) Data {
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return ParseError("Start", "int")
+		return ParseError("Start", "number")
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return ParseError("End", "int")
+		return ParseError("End", "number")
 	}
 
 	ds.mu.Lock()
@@ -547,9 +565,9 @@ func (ds *DataStore) zrange(key, startStr, endStr string) Data {
 	rangeResults := e.value.(SortedSet).Range(start, end)
 	var results []string
 
-  for i := range rangeResults {
-    results = append(results, rangeResults[i].Value, fmt.Sprintf("%g", rangeResults[i].Score))
+	for i := range rangeResults {
+		results = append(results, rangeResults[i].Value, fmt.Sprintf("%g", rangeResults[i].Score))
 	}
 
-  return List(results)
+	return List(results)
 }
