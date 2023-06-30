@@ -13,5 +13,5 @@ func (i Number) Type() string {
 }
 
 func (i Number) Response() []byte {
-	return []byte(fmt.Sprintf(":%v\r\n", fmt.Sprintf("%g", i)))
+	return []byte(fmt.Sprintf(":%g\r\n", i))
 }

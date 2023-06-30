@@ -36,7 +36,7 @@ func (ds *DataStore) get(key string) Data {
 		return e.value
 	}
 
-  return MissingKeyError(key)
+	return MissingKeyError(key)
 }
 
 func (ds *DataStore) incr(key string) Data {
@@ -47,7 +47,7 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 	increment, err := strconv.Atoi(incrementStr)
 
 	if err != nil {
-		return ParseError("Increment", "int")
+		return ParseError("Increment", TNumber)
 	}
 
 	ds.mu.Lock()
@@ -56,11 +56,11 @@ func (ds *DataStore) incrby(key, incrementStr string) Data {
 	e, ok := ds.data[key]
 
 	if !ok {
-    return MissingKeyError(key)
+		return MissingKeyError(key)
 	}
 
 	if e.value.Type() != TNumber {
-    return IncorrectTypeError("incrby", e.value.Type())
+		return IncorrectTypeError("incrby", e.value.Type())
 	}
 
 	val := e.value.(Number)
@@ -76,7 +76,7 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 	decrement, err := strconv.Atoi(decrementStr)
 
 	if err != nil {
-    return ParseError("decrement", "number")
+		return ParseError("decrement", TNumber)
 	}
 
 	ds.mu.Lock()
@@ -85,11 +85,11 @@ func (ds *DataStore) decrby(key, decrementStr string) Data {
 	e, ok := ds.data[key]
 
 	if !ok {
-    return MissingKeyError(key)
+		return MissingKeyError(key)
 	}
 
 	if e.value.Type() != TNumber {
-    return IncorrectTypeError("decrby", e.value.Type())
+		return IncorrectTypeError("decrby", e.value.Type())
 	}
 
 	val := e.value.(Number)
@@ -138,7 +138,7 @@ func (ds *DataStore) expire(key string, ttlStr string) Data {
 	ttl, err := strconv.Atoi(ttlStr)
 
 	if err != nil {
-		return ParseError("ttl", "int")
+		return ParseError("ttl", TNumber)
 	}
 
 	if ttl < 1 {
@@ -146,7 +146,7 @@ func (ds *DataStore) expire(key string, ttlStr string) Data {
 	}
 
 	ds.mu.Lock()
-  defer ds.mu.Unlock()
+	defer ds.mu.Unlock()
 
 	e, exists := ds.data[key]
 
@@ -270,13 +270,13 @@ func (ds *DataStore) lrange(key, startStr, endStr string) Data {
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return ParseError("Start", "int")
+		return ParseError("Start", TNumber)
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return ParseError("End", "int")
+		return ParseError("End", TNumber)
 	}
 
 	ds.mu.Lock()
@@ -313,13 +313,13 @@ func (ds *DataStore) ltrim(key, startStr, endStr string) Data {
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return ParseError("Start", "int")
+		return ParseError("Start", TNumber)
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return ParseError("End", "int")
+		return ParseError("End", TNumber)
 	}
 
 	ds.mu.Lock()
@@ -469,7 +469,7 @@ func (ds *DataStore) zadd(key, value, scoreStr string) Data {
 	score, err := strconv.ParseFloat(scoreStr, 32)
 
 	if err != nil {
-		return ParseError("Score", "float")
+		return ParseError("Score", TNumber)
 	}
 
 	ds.mu.Lock()
@@ -541,13 +541,13 @@ func (ds *DataStore) zrange(key, startStr, endStr string) Data {
 	start, err := strconv.Atoi(startStr)
 
 	if err != nil {
-		return ParseError("Start", "number")
+		return ParseError("Start", TNumber)
 	}
 
 	end, err := strconv.Atoi(endStr)
 
 	if err != nil {
-		return ParseError("End", "number")
+		return ParseError("End", TNumber)
 	}
 
 	ds.mu.Lock()
