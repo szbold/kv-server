@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-  server := kvs.NewKeyValueServer("192.168.1.36:6379")
+  server := kvs.NewKeyValueServer("127.0.0.1:6379")
   server.Run()
 }
