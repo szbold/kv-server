@@ -1,0 +1,7 @@
+FROM golang:latest
+
+COPY . /go/src/kv-server
+
+WORKDIR /go/src/kv-server
+
+RUN go build .
