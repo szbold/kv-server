@@ -1,9 +1,11 @@
 package datastore
 
 import (
-	"github.com/stretchr/testify/assert"
 	. "kv-server/types"
+	"slices"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var ds DataStore = NewDataStore()
@@ -18,6 +20,7 @@ func TestKeysCommand(t *testing.T) {
 	ds.data["key1"] = newEntry(String("value1"))
 	ds.data["key2"] = newEntry(String("value2"))
 
+	slices.Sort(ds.keys())
 	got = ds.keys()
 	want = List{"key1", "key2"}
 
@@ -275,7 +278,7 @@ func TestSremCommand(t *testing.T) {
 
 	ds.sadd("key", "value")
 	ds.srem("key", "value")
-  got = ds.data["key"].value.(Set)
+	got = ds.data["key"].value.(Set)
 
 	want = NewSet()
 
