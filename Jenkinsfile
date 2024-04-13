@@ -15,7 +15,7 @@ pipeline {
     stage('Build executable') {
       steps {
         echo 'Building executable...'
-        sh "docker build -t builder --targer builder . > build.log 2>&1"
+        sh "docker build -t builder --target builder . > build.log 2>&1"
       }
     }
       
