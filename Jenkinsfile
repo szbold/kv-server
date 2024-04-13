@@ -52,7 +52,7 @@ pipeline {
     stage('Cleanup') {
       steps {
         echo 'Cleaning this mess...'
-        sh "chmox +x ./cleanup.sh"
+        sh "chmod +x ./cleanup.sh"
         sh "./cleanup.sh"
       }
     }
