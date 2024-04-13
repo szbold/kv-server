@@ -8,7 +8,7 @@ pipeline {
   stages {
     stage('Init') {
       steps {
-        echo "${env.BUILD_TAG}"
+        sh "export DOCKER_BUILDKIT=1"
       }
     }
 
