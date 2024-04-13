@@ -12,25 +12,44 @@ pipeline {
       }
     }
 
-    stage('Build') {
+    stage('Build executable') {
       steps {
-        echo 'Building...'
-        sh "docker build -t builder:1.0 -f ./Dockerfile.build . > build.log 2>&1"
+        echo 'Building executable...'
+        sh "docker build -t builder --targer builder . > build.log 2>&1"
       }
     }
       
     stage('Test') {
       steps {
         echo 'Testing...'
-        sh "docker build -t tester:1.0 -f ./Dockerfile.test . > test.log 2>&1"
+        sh "docker build -t tester --target tester . > test.log 2>&1"
       }
     }
+
+    stage('Build deploy image') {
+      echo 'Building deploy container' 
+      sh "docker build -t kv-server --target kv-server ."
+    }
+
+    stage('Smoke test') {
+      echo 'Running smoke test'
+      sh "chmod +x smoke_test.sh"
+      sh "./smoke_test.sh"
+    }
     
-    stage('Upload artifacts') {
+    stage('Create artifacts') {
       steps {
-        echo 'Uploading artifacts...'
+        echo 'Creating artifacts...'
         sh "tar -czf artifact_${env.BUILD_TAG}.tar.gz ./build.log ./test.log"
         archiveArtifacts artifacts: "artifact_*.tar.gz", fingerprint: true
+      }
+    }
+
+    stage('Cleanup') {
+      steps {
+        echo 'Cleaning this mess...'
+        sh "chmox +x ./cleanup.sh"
+        sh "./cleanup.sh"
       }
     }
   }
