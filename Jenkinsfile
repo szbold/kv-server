@@ -27,14 +27,18 @@ pipeline {
     }
 
     stage('Build deploy image') {
-      echo 'Building deploy container' 
-      sh "docker build -t kv-server --target kv-server ."
+      steps {
+        echo 'Building deploy container' 
+        sh "docker build -t kv-server --target kv-server ."
+      }
     }
 
     stage('Smoke test') {
-      echo 'Running smoke test'
-      sh "chmod +x smoke_test.sh"
-      sh "./smoke_test.sh"
+      steps {
+        echo 'Running smoke test'
+        sh "chmod +x smoke_test.sh"
+        sh "./smoke_test.sh"
+      }
     }
     
     stage('Create artifacts') {
