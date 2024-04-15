@@ -1,8 +1,8 @@
 #!/bin/sh
 
-docker run -d kv-server > id.tmp
+docker run -d $1 > id.tmp
 
-if [ ! -z "$(docker ps | grep kv-server)" ]; then
+if [ ! -z "$(docker ps | grep $1)" ]; then
   # container running correctly
   docker stop $(cat id.tmp)
   rm id.tmp

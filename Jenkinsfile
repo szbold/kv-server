@@ -1,8 +1,10 @@
 pipeline {
   agent any
   
-  triggers {
-    pollSCM('* * * * *')
+  environment {
+    DOCKER_CREDENTIALS = credentials('docker-hub')
+    DOCKER_IMAGE_NAME = 'szbold/kv-server'
+    DOCKER_TAG = 'latest'
   }
 
   stages {
@@ -29,14 +31,14 @@ pipeline {
     stage('Build deploy image') {
       steps {
         echo 'Building deploy container' 
-        sh "docker build -t kv-server --target kv-server ."
+        sh "docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} --target kv-server ."
       }
     }
 
     stage('Smoke test') {
       steps {
         echo 'Running smoke test'
-        sh "chmod +x smoke_test.sh"
+        sh "chmod +x smoke_test.sh ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
         sh "./smoke_test.sh"
       }
     }
@@ -46,6 +48,14 @@ pipeline {
         echo 'Creating artifacts...'
         sh "tar -czf artifact_${env.BUILD_TAG}.tar.gz ./build.log ./test.log"
         archiveArtifacts artifacts: "artifact_*.tar.gz", fingerprint: true
+      }
+    }
+    
+    stage('Publish') {
+      steps {
+        echo 'Publishing to docker hub...'
+        sh "docker login -u ${DOCKER_CREDENTIALS_USR} -p ${DOCKER_CREDENTIALS_PSW}"
+        sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
       }
     }
 
