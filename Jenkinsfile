@@ -38,8 +38,8 @@ pipeline {
     stage('Smoke test') {
       steps {
         echo 'Running smoke test'
-        sh "chmod +x smoke_test.sh ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
-        sh "./smoke_test.sh"
+        sh "chmod +x smoke_test.sh"
+        sh "./smoke_test.sh  ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
       }
     }
     
@@ -54,7 +54,7 @@ pipeline {
     stage('Publish') {
       steps {
         echo 'Publishing to docker hub...'
-        sh "docker login -u ${DOCKER_CREDENTIALS_USR} -p ${DOCKER_CREDENTIALS_PSW}"
+        sh "echo ${DOCKER_CREDENTIALS_PSW} | docker login -u ${DOCKER_CREDENTIALS_USR} --password-stdin"
         sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
       }
     }
