@@ -4,7 +4,6 @@ pipeline {
   environment {
     DOCKER_CREDENTIALS = credentials('docker-hub')
     DOCKER_IMAGE_NAME = 'szbold/kv-server'
-    DOCKER_TAG = 'latest'
   }
 
   stages {
@@ -31,7 +30,7 @@ pipeline {
     stage('Build deploy image') {
       steps {
         echo 'Building deploy container' 
-        sh "docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} --target kv-server ."
+        sh "docker build -t ${DOCKER_IMAGE_NAME}:${env.BUILD_ID} --target kv-server ."
       }
     }
 
@@ -39,7 +38,7 @@ pipeline {
       steps {
         echo 'Running smoke test'
         sh "chmod +x smoke_test.sh"
-        sh "./smoke_test.sh  ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+        sh "./smoke_test.sh  ${DOCKER_IMAGE_NAME}:${env.BUILD_ID}"
       }
     }
     
@@ -55,7 +54,7 @@ pipeline {
       steps {
         echo 'Publishing to docker hub...'
         sh "echo ${DOCKER_CREDENTIALS_PSW} | docker login -u ${DOCKER_CREDENTIALS_USR} --password-stdin"
-        sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+        sh "docker push ${DOCKER_IMAGE_NAME}:${env.BUILD_ID}"
       }
     }
 
