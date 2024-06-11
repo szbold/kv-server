@@ -5,10 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
-	// "os/signal"
 	"strings"
-	// "syscall"
-	// "time"
 )
 
 type server struct {
@@ -48,6 +45,7 @@ func (s *server) Run() {
 
 	for {
 		conn, err := listener.Accept()
+		log.Printf("New connection %v\n", conn.RemoteAddr().String())
 
 		if err != nil {
 			log.Fatal("Error accepting conn ", err)
